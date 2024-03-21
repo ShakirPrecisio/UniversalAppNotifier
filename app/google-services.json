@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1071450710202",
+    "project_id": "universalappnotifier",
+    "storage_bucket": "universalappnotifier.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071450710202:android:1136e84b1adc73a06ee283",
+        "android_client_info": {
+          "package_name": "com.example.universalappnotifier"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1071450710202-7br0rfpk6mgk8u7nv4b7ffaicc8m7tiq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.universalappnotifier",
+            "certificate_hash": "81a53dca54b8afe236c814439f3bbad2b20156c2"
+          }
+        },
+        {
+          "client_id": "1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB94GfmLdtrGg5yZfRRAeGa5xfQYOH82dE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

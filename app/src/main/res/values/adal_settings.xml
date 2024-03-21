@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="AADAuthority">https://login.microsoftonline.com/common</string>
+    <string name="AADResourceId">https://outlook.office.com</string>
+    <string name="AADClientId">6da540bf-b5ce-47f5-94dd-d53f9c7b6ab6</string>
+    <string name="AADRedirectUrl">msauth://com.example.universalappnotifier/gaU9ylS4r%2BI2yBRDnzu60rIBVsI%3D</string>
+</resources>

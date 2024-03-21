@@ -1,0 +1,26 @@
+//for my sign in implementation
+    private lateinit var googleSignInManager: GoogleSignInManager
+        val activityResultRegistry = this.activityResultRegistry
+        googleSignInManager = GoogleSignInManager(activityResultRegistry, this, this)
+
+        binding.cvSignInWithGoogle.setOnClickListener {
+            googleSignInManager.signIn(object: GoogleSignInCustomCallback {
+                override fun onSuccess() {
+                    Utils.printDebugLog("Google_Sign_In: Success")
+                    Utils.showShortToast(this@SignInActivity, "Signed in successfully!")
+                    finish()
+                    startActivity(Intent(this@SignInActivity, DashboardActivity::class.java))
+                }
+
+                override fun onFailure(exception: Exception) {
+                    Utils.showShortToast(this@SignInActivity, "Signed in failed! Try again")
+                    Utils.printDebugLog("Google_Sign_In: Failed")
+                }
+
+                override fun onLoading() {
+                    Utils.showLongToast(this@SignInActivity, "Please wait signing you in")
+                    Utils.printDebugLog("Google_Sign_In: Loading")
+                }
+
+            })
+        }
