@@ -1,7 +1,7 @@
 package com.example.universalappnotifier.google
 
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.example.universalappnotifier.models.GenericEventModel
 
 interface GoogleCalendarCallbacks {
-    fun onInitCalendarBuild(credential: GoogleAccountCredential?)
+    fun onEventsFetched(eventsList: List<GenericEventModel>?)
 }

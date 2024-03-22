@@ -9,9 +9,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.universalappnotifier.R
 import com.example.universalappnotifier.enums.EventSource
+import com.example.universalappnotifier.google.GoogleCalendarCallbacks
 import com.example.universalappnotifier.models.GenericEventModel
 
-class EventsAdapter(private val dataList: List<GenericEventModel>, private val context: Context) : RecyclerView.Adapter<EventsAdapter.ViewHolder>() {
+class GenericEventsAdapter(private val dataList: List<GenericEventModel>, private val context: Context) : RecyclerView.Adapter<GenericEventsAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.event_list_item, parent, false)

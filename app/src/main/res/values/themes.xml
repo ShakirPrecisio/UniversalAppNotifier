@@ -15,7 +15,7 @@
         <item name="android:textColor">@color/dark_text_color</item>
         <item name="android:gravity">center</item>
         <item name="drawableTint">@color/dark_text_color</item>
-        <item name="fontFamily">@font/quicksand_bold</item>
+        <item name="fontFamily">@font/inter_bold</item>
     </style>
 
     <style name="MediumSemiBoldText">

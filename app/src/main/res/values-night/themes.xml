@@ -20,7 +20,7 @@
         <item name="android:textColor">@color/light_text_color</item>
         <item name="android:gravity">center</item>
         <item name="drawableTint">@color/light_text_color</item>
-        <item name="fontFamily">@font/quicksand_semi_bold</item>
+        <item name="fontFamily">@font/inter_bold</item>
     </style>
 
     <style name="SmallRegularText">

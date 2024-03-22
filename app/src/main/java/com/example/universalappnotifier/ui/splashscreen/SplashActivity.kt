@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.lifecycle.lifecycleScope
 import com.example.universalappnotifier.R
+import com.example.universalappnotifier.databinding.ActivitySplashBinding
 import com.example.universalappnotifier.ui.dashboard.DashboardActivity
 import com.example.universalappnotifier.ui.dashboard.EventListActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
@@ -16,17 +17,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivitySplashBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val currentUser = getCurrentlySignedInUser()
-//        if (currentUser != null){
-//            navigate("DashboardActivity")
-//        } else {
-//            navigate("SignInActivity")
-//        }
-        navigate("EventListActivity")
+        if (currentUser != null){
+            navigate("DashboardActivity")
+        } else {
+            navigate("SignInActivity")
+        }
+//        navigate("DashboardActivity")
 
     }
 

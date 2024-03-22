@@ -10,7 +10,9 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.universalappnotifier.contants.AppConstants
 import com.example.universalappnotifier.databinding.ActivityEventListBinding
-import com.example.universalappnotifier.google.GoogleCalendarManager3
+import com.example.universalappnotifier.google.GoogleCalendarCallbacks
+import com.example.universalappnotifier.google.GoogleCalendarEventsFetcher
+import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.utils.Utils
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -23,7 +25,7 @@ class EventListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEventListBinding
 
-    private lateinit var googleCalendarManager3: GoogleCalendarManager3
+    private lateinit var googleCalendarEventsFetcher: GoogleCalendarEventsFetcher
 
     private var emailIdList = arrayListOf<String>()
 
@@ -51,13 +53,12 @@ class EventListActivity : AppCompatActivity() {
                 if (Utils.isDeviceOnline(this@EventListActivity)) {
                     if (isGooglePlayServicesAvailable()) {
                         if ((Utils.staticList as ArrayList<String>).isNotEmpty()) {
-                            googleCalendarManager3 =
-                                GoogleCalendarManager3(
-                                    this@EventListActivity,
+                            googleCalendarEventsFetcher =
+                                GoogleCalendarEventsFetcher(
                                     this@EventListActivity,
                                     this@EventListActivity,
                                     requestAuthorizationLauncher)
-                            googleCalendarManager3.setEmails(Utils.staticList)
+//                            googleCalendarEventsFetcher.fetchEvents(Utils.staticList)
                         } else {
                             val credential =
                                 GoogleAccountCredential.usingOAuth2(

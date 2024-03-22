@@ -21,6 +21,35 @@ object Utils {
         }
     }
 
+    fun singleOptionAlertDialog(
+        context: Context,
+        title: String,
+        msg: String,
+        optionName: String,
+        isCancelable: Boolean,
+        positiveMethod: () -> Unit = {}
+    ) {
+        val dialogBuilder = MaterialAlertDialogBuilder(context)
+
+        // set message of alert dialog
+        dialogBuilder.setMessage(msg)
+
+            // if the dialog is cancelable
+            .setCancelable(isCancelable)
+            // positive button text and action
+            .setPositiveButton(optionName) { dialog, id ->
+                dialog.cancel()
+                positiveMethod()
+            }
+
+        // create dialog box
+        val alert = dialogBuilder.create()
+        // set title for alert dialog box
+        alert.setTitle(title)
+        // show alert dialog
+        alert.show()
+    }
+
     fun twoOptionAlertDialog(
         context: Context,
         title: String,
