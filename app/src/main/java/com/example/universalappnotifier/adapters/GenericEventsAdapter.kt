@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.universalappnotifier.R
 import com.example.universalappnotifier.enums.EventSource
 import com.example.universalappnotifier.models.GenericEventModel
+import com.example.universalappnotifier.utils.Utils
 import com.example.universalappnotifier.utils.Utils.createFadedVersionOfColor
 
 
@@ -48,8 +49,8 @@ class GenericEventsAdapter(private val dataList: List<GenericEventModel>, privat
             llEventSourceLayout.background = createRoundedDrawable(data.color!!)
             tvTitle.text = data.title
             tvCreatedBy.text = context.getString(R.string.created_by, data.created_by)
-            tvStartTime.text = context.getString(R.string.start, data.start_time)
-            tvEndTime.text = context.getString(R.string.end, data.end_time)
+            tvStartTime.text = context.getString(R.string.start, Utils.formatTimeFromTimestamp(data.start_time.toString()))
+            tvEndTime.text = context.getString(R.string.end, Utils.formatTimeFromTimestamp(data.end_time.toString()))
             tvEventSource.text = data.event_source_email_id
             tvEventSource.text = context.getString(R.string.coming_from, data.event_source_email_id)
             if (data.event_source == EventSource.GOOGLE) {

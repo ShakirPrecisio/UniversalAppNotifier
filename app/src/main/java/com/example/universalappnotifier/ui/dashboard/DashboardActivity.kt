@@ -40,6 +40,8 @@ import com.google.api.services.calendar.CalendarScopes
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.EasyPermissions
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class DashboardActivity : AppCompatActivity() {
 
@@ -233,8 +235,9 @@ class DashboardActivity : AppCompatActivity() {
                         }
                     }
                 }
+                val sortedList = sortTimestamps(googleCalendarEventsList!!)
                 val genericEventsAdapter = GenericEventsAdapter(
-                    googleCalendarEventsList!!,
+                    sortedList,
                     this@DashboardActivity
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
@@ -243,6 +246,16 @@ class DashboardActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun sortTimestamps(genericEventsList: List<GenericEventModel>): List<GenericEventModel> {
+        // Define a DateTimeFormatter to parse the timestamps
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+
+        // Parse the timestamps as ZonedDateTime objects and sort them
+        Utils.printDebugLog("sortTimestamps: ${genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) }}")
+        return genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) }
+    }
+
 
     private fun isGooglePlayServicesAvailable(): Boolean {
         val apiAvailability = GoogleApiAvailability.getInstance()

@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.util.Calendar as JavaUtilCalendar
 
 class GoogleCalendarEventsFetcher(
     private val context: Context,
@@ -72,12 +73,27 @@ class GoogleCalendarEventsFetcher(
     }
 
     private suspend fun getDataFromCalendarAsync(emailData: EmailData): List<GenericEventModel> = withContext(Dispatchers.IO) {
+        val date = JavaUtilCalendar.getInstance()
+        date.set(2024, JavaUtilCalendar.MARCH, 26) // Set the year, month, and day
+
         val now = DateTime(System.currentTimeMillis())
         val genericEventsList = ArrayList<GenericEventModel>()
         try {
+            val startOfDay = date.clone() as JavaUtilCalendar
+            startOfDay.set(JavaUtilCalendar.HOUR_OF_DAY, 0)
+            startOfDay.set(JavaUtilCalendar.MINUTE, 0)
+            startOfDay.set(JavaUtilCalendar.SECOND, 0)
+            startOfDay.set(JavaUtilCalendar.MILLISECOND, 0)
+
+            val endOfDay = date.clone() as JavaUtilCalendar
+            endOfDay.set(JavaUtilCalendar.HOUR_OF_DAY, 23)
+            endOfDay.set(JavaUtilCalendar.MINUTE, 59)
+            endOfDay.set(JavaUtilCalendar.SECOND, 59)
+            endOfDay.set(JavaUtilCalendar.MILLISECOND, 999)
             val events = emailData.calendar_service!!.events().list("primary")
-                .setMaxResults(20)
-                .setTimeMin(now)
+                .setMaxResults(50)
+                .setTimeMin(DateTime(startOfDay.time))
+                .setTimeMax(DateTime(endOfDay.time))
                 .setOrderBy("startTime")
                 .setSingleEvents(true)
                 .execute()
@@ -104,8 +120,8 @@ class GoogleCalendarEventsFetcher(
             genericEventData.event_source_email_id = emailData.email_id
             genericEventData.created_by = event.creator.email
             genericEventData.title = event.summary
-            genericEventData.start_time = Utils.formatTimeFromTimestamp(event.start.dateTime.toString())
-            genericEventData.end_time = Utils.formatTimeFromTimestamp(event.end.dateTime.toString())
+            genericEventData.start_time = event.start.dateTime.toString()
+            genericEventData.end_time = event.end.dateTime.toString()
             genericEventData
         } else {
             null

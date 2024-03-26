@@ -4,6 +4,6 @@
     <string name="add_email">+ Add Email</string>
     <string name="created_by">Created by: %1$s</string>
     <string name="coming_from">Coming from\n%1$s</string>
-    <string name="start">Start\n %1$s</string>
-    <string name="end">End\n %1$s</string>
+    <string name="start">Start\n%1$s</string>
+    <string name="end">End\n%1$s</string>
 </resources>
