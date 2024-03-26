@@ -85,7 +85,7 @@ class GoogleSignInManager2(private val activityResultRegistry: ActivityResultReg
         launcher.launch(signInClient)
     }
 
-    private fun addUserIntoFirebase(name: String, email: String): FirebaseResponse<Boolean> {
+    private suspend fun addUserIntoFirebase(name: String, email: String): FirebaseResponse<Boolean> {
         return appRepository.addUserIntoFirebase(name, email)
     }
 }

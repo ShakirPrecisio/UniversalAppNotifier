@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.LifecycleOwner
 import com.example.universalappnotifier.enums.EventSource
+import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.EmailData
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.utils.Utils
@@ -28,25 +29,27 @@ class GoogleCalendarEventsFetcher(
     private val lifecycleOwner: LifecycleOwner,
     private val requestAuthorizationLauncher: ActivityResultLauncher<Intent>) {
 
-    private var emailList: ArrayList<String>? = null
+    private var emailList: List<CalendarEmailData>? = null
     private var emailDataList: ArrayList<EmailData> = arrayListOf()
 
-    suspend fun fetchEvents(newEmailList: ArrayList<String>): List<GenericEventModel> {
+    suspend fun fetchEvents(newEmailList: List<CalendarEmailData>): List<GenericEventModel> {
         emailList = newEmailList
-        for (emailId in emailList!!) {
+        Utils.printDebugLog("emailList: $emailList")
+        Utils.printDebugLog("newEmailList: $newEmailList")
+        for (item in emailList!!) {
             val credential =
                 GoogleAccountCredential.usingOAuth2(
                     context,
                     arrayListOf(CalendarScopes.CALENDAR)
                 ).setBackOff(ExponentialBackOff())
-            credential!!.selectedAccountName = emailId
+            credential!!.selectedAccountName = item.email_id
             val transport = AndroidHttp.newCompatibleTransport()
             val jsonFactory = JacksonFactory.getDefaultInstance()
             val service =
                 Calendar.Builder(transport, jsonFactory, credential)
                     .setApplicationName("UniversalAppNotifier")
                     .build()
-            emailDataList.add(EmailData(emailId, credential, service))
+            emailDataList.add(EmailData(item.email_id, credential, service))
         }
         return fetchDataFromCalendarMultipleTimesAsync(emailDataList)
     }
@@ -101,8 +104,8 @@ class GoogleCalendarEventsFetcher(
             genericEventData.event_source_email_id = emailData.email_id
             genericEventData.created_by = event.creator.email
             genericEventData.title = event.summary
-            genericEventData.start_time = event.start.dateTime.toString()
-            genericEventData.end_time = event.end.dateTime.toString()
+            genericEventData.start_time = Utils.formatTimeFromTimestamp(event.start.dateTime.toString())
+            genericEventData.end_time = Utils.formatTimeFromTimestamp(event.end.dateTime.toString())
             genericEventData
         } else {
             null

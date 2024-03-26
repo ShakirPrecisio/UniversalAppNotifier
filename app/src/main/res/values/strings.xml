@@ -2,5 +2,8 @@
     <string name="app_name">UniversalAppNotifier</string>
     <string name="calendar_events">Calendar Events</string>
     <string name="add_email">+ Add Email</string>
-    <string name="event_coming_from">"Event coming from: "</string>
+    <string name="created_by">Created by: %1$s</string>
+    <string name="coming_from">Coming from\n%1$s</string>
+    <string name="start">Start\n %1$s</string>
+    <string name="end">End\n %1$s</string>
 </resources>

@@ -9,4 +9,5 @@ data class GenericEventModel(
     var title: String? = null,
     var start_time: String? = null,
     var end_time: String? = null,
+    var color: Int? = null,
 )

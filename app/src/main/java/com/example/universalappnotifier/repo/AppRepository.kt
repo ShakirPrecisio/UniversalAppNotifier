@@ -3,6 +3,7 @@ package com.example.universalappnotifier.repo
 import com.example.universalappnotifier.firebase.FirebaseManager
 import com.example.universalappnotifier.firebase.FirebaseResponse
 import com.example.universalappnotifier.firebase.firebaseAwaitOperationCaller
+import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.UserData
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
@@ -14,7 +15,7 @@ class AppRepository(private val firebaseManager: FirebaseManager) {
             firebaseManager.signInWithGoogleAccount(authCredential)
         }
 
-    fun addUserIntoFirebase(name: String, email: String): FirebaseResponse<Boolean> {
+    suspend fun addUserIntoFirebase(name: String, email: String): FirebaseResponse<Boolean> {
         return firebaseManager.addUserIntoDatabase(name, email)
     }
 
@@ -26,8 +27,8 @@ class AppRepository(private val firebaseManager: FirebaseManager) {
         return firebaseManager.getUserData(userId)
     }
 
-    fun addEmailIdForCalendarEvents(userId: String, emailId: String): FirebaseResponse<Boolean> {
-        return firebaseManager.addUserEmailIdForCalendarEvents(userId, emailId)
+    suspend fun addEmailIdForCalendarEvents(userId: String, emailId: String, color: Int): FirebaseResponse<List<CalendarEmailData>> {
+        return firebaseManager.addUserEmailIdForCalendarEvents2(userId, emailId, color)
     }
 
 }

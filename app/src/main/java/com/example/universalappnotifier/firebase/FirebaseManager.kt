@@ -1,6 +1,8 @@
 package com.example.universalappnotifier.firebase
 
+import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.UserData
+import com.example.universalappnotifier.utils.Utils
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -27,18 +29,43 @@ class FirebaseManager {
         return auth.signInWithCredential(authCredential)
     }
 
-    fun addUserIntoDatabase(name: String, email: String): FirebaseResponse<Boolean> {
+    suspend fun addUserIntoDatabase(name: String, email: String): FirebaseResponse<Boolean> {
         return try {
-            databaseReference.child("users")
-                .child(auth.currentUser?.uid.toString())
-                .setValue(
-                    UserData(
-                        user_name = name,
-                        user_email = email
-                    )
-                )
-            FirebaseResponse.Success(true)
+            val uid = auth.currentUser?.uid.toString()
+            val retrievedUser = getUserByUID(uid)
+            when (retrievedUser) {
+                is FirebaseResponse.Success -> {
+                    // User data retrieval successful
+
+                    val userDataExists = retrievedUser.data != null
+                    if (userDataExists) {
+                        // User data exists, update the existing entry
+                        FirebaseResponse.Success(true)
+                    } else {
+                        // User data doesn't exist, add a new entry
+                        databaseReference.child("users")
+                            .child(uid)
+                            .setValue(
+                                UserData(
+                                    user_name = name,
+                                    user_email = email
+                                )
+                            ).await()
+                    }
+                    // Return success response
+                    FirebaseResponse.Success(true)
+                }
+                is FirebaseResponse.Failure -> {
+                    // User data retrieval failed, return failure response
+                    FirebaseResponse.Failure(retrievedUser.exception)
+                }
+
+                else -> {
+                    FirebaseResponse.Failure(Exception("Something went wrong"))
+                }
+            }
         } catch (e: Exception) {
+            // Exception occurred, return failure response
             FirebaseResponse.Failure(e)
         }
     }
@@ -52,6 +79,19 @@ class FirebaseManager {
             }
         }
     }
+
+    private suspend fun getUserByUID(uid: String): FirebaseResponse<UserData?> {
+        return try {
+            val userReference = databaseReference.child("users").child(uid)
+            val snapshot = userReference.get().await()
+
+            val userData = snapshot.getValue(UserData::class.java)
+            FirebaseResponse.Success(userData)
+        } catch (e: Exception) {
+            FirebaseResponse.Failure(e)
+        }
+    }
+
 
     suspend fun getUserData(userId: String): FirebaseResponse<UserData?> {
         return try {
@@ -69,49 +109,38 @@ class FirebaseManager {
 
     fun addUserEmailIdForCalendarEvents(
         userId: String,
-        emailId: String
-    ): FirebaseResponse<Boolean> {
-        val future = CompletableFuture<FirebaseResponse<Boolean>>()
+        emailId: String,
+        color: Int
+    ): FirebaseResponse<List<CalendarEmailData>> {
+        val future = CompletableFuture<FirebaseResponse<List<CalendarEmailData>>>()
 
         try {
-            val userReference = Firebase.database.reference.child("users").child(userId).child("calendar_events")
+            val userReference = Firebase.database.reference
+                .child("users")
+                .child(userId)
+                .child("calendar_events")
+                .child("google_calendar")
 
-            // Fetch the current list of email IDs
-            userReference.child("google_calendar_email_ids").addListenerForSingleValueEvent(object : ValueEventListener {
+            userReference.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val currentEmailIds = snapshot.value as? List<*>
+                    val currentEmailIds = snapshot.value as? List<CalendarEmailData>?
 
-                    if (currentEmailIds != null) {
-                        // Create a mutable copy of the current list or initialize an empty list
-                        val mutableEmailIds = currentEmailIds.toMutableList()
+                    val updatedEmailIds = currentEmailIds?.toMutableList() ?: mutableListOf()
 
-                        // Add the new emailId to the list
-                        mutableEmailIds.add(emailId)
+                    updatedEmailIds.add(CalendarEmailData(emailId, color))
 
-                        // Update the database with the updated list
-                        userReference.child("google_calendar_email_ids").setValue(mutableEmailIds)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    future.complete(FirebaseResponse.Success(true))
-                                } else {
-                                    future.complete(FirebaseResponse.Failure(task.exception))
-                                }
+                    userReference.setValue(updatedEmailIds)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                future.complete(FirebaseResponse.Success(updatedEmailIds.toList()))
+                            } else {
+                                future.complete(FirebaseResponse.Failure(Exception("Failed to update email IDs")))
                             }
-                    } else {
-                        // If the current list is null, initialize a new list with the new emailId
-                        userReference.child("google_calendar_email_ids").setValue(listOf(emailId))
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    future.complete(FirebaseResponse.Success(true))
-                                } else {
-                                    future.complete(FirebaseResponse.Failure(task.exception))
-                                }
-                            }
-                    }
+                        }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    future.complete(FirebaseResponse.Failure(error.toException()))
+                    future.complete(FirebaseResponse.Failure(Exception("Database operation cancelled: ${error.message}")))
                 }
             })
         } catch (e: Exception) {
@@ -120,6 +149,40 @@ class FirebaseManager {
 
         return future.join()
     }
+
+    suspend fun addUserEmailIdForCalendarEvents2(
+        userId: String,
+        emailId: String,
+        color: Int
+    ): FirebaseResponse<List<CalendarEmailData>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val userReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("google_calendar")
+
+                val snapshot = userReference.get().await()
+                val currentEmailIds = snapshot.children.mapNotNull { data ->
+                    data.getValue(CalendarEmailData::class.java)
+                }
+
+                val updatedEmailIds = currentEmailIds.toMutableList()
+                updatedEmailIds.add(CalendarEmailData(emailId, color))
+
+                userReference.setValue(updatedEmailIds).await()
+
+                // Return success response
+                FirebaseResponse.Success(updatedEmailIds.toList())
+
+            } catch (e: Exception) {
+                // Return failure response
+                FirebaseResponse.Failure(e)
+            }
+        }
+    }
+
 
 
 }

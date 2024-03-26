@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.universalappnotifier.exceptionhandling.CustomException
 import com.example.universalappnotifier.firebase.FirebaseResponse
+import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.repo.AppRepository
 import com.example.universalappnotifier.utils.Utils
@@ -14,8 +15,8 @@ import kotlinx.coroutines.launch
 
 class DashboardViewModel(private val appRepository: AppRepository) : ViewModel() {
 
-    private val _isEmailAddedMLiveData = MutableLiveData<FirebaseResponse<Boolean>>()
-    val isEmailAddedLiveData: LiveData<FirebaseResponse<Boolean>>
+    private val _isEmailAddedMLiveData = MutableLiveData<FirebaseResponse<List<CalendarEmailData>>>()
+    val isEmailAddedLiveData: LiveData<FirebaseResponse<List<CalendarEmailData>>>
         get() = _isEmailAddedMLiveData
 
 
@@ -68,13 +69,14 @@ class DashboardViewModel(private val appRepository: AppRepository) : ViewModel()
         }
     }
 
-    fun addUserEmailIdForCalendarEvents(emailId: String) {
+    fun addUserEmailIdForCalendarEvents(emailId: String, color: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentlySignedInUser = appRepository.getCurrentLoggedInUser()
             if (currentlySignedInUser is FirebaseResponse.Success && currentlySignedInUser.data != null) {
-                val result = appRepository.addEmailIdForCalendarEvents(currentlySignedInUser.data.uid,emailId)
+                val result = appRepository.addEmailIdForCalendarEvents(currentlySignedInUser.data.uid,emailId, color)
+                Utils.printDebugLog("result: $result")
                 if (result is FirebaseResponse.Success) {
-                    _isEmailAddedMLiveData.postValue(FirebaseResponse.Success(true))
+                    _isEmailAddedMLiveData.postValue(FirebaseResponse.Success(result.data))
                 } else if (result is FirebaseResponse.Failure) {
                     _isEmailAddedMLiveData.postValue(
                         FirebaseResponse.Failure(

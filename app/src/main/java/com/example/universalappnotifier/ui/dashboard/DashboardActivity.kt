@@ -4,24 +4,32 @@ import android.Manifest
 import android.accounts.AccountManager
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.universalappnotifier.GridSpacingItemDecoration
 import com.example.universalappnotifier.MyApplication
-import com.example.universalappnotifier.R
+import com.example.universalappnotifier.adapters.ColorAdapter
 import com.example.universalappnotifier.adapters.GenericEventsAdapter
 import com.example.universalappnotifier.contants.AppConstants
 import com.example.universalappnotifier.databinding.ActivityDashboardBinding
 import com.example.universalappnotifier.firebase.FirebaseResponse
 import com.example.universalappnotifier.google.GoogleCalendarEventsFetcher
+import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.utils.ProgressDialog
 import com.example.universalappnotifier.utils.Utils
+import com.example.universalappnotifier.utils.Utils.dpToPx
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.ConnectionResult
@@ -42,6 +50,8 @@ class DashboardActivity : AppCompatActivity() {
 
     private var googleCalendarEventsList: List<GenericEventModel>? = null
     private lateinit var googleCalendarEventsFetcher: GoogleCalendarEventsFetcher
+
+    private lateinit var colorPickerDialog: AlertDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,9 +76,8 @@ class DashboardActivity : AppCompatActivity() {
             Utils.showShortToast(this@DashboardActivity, "Signing you out")
             FirebaseAuth.getInstance().signOut()
 
-            Utils.printDebugLog("default_web_client_id: ${getString(R.string.default_web_client_id)}")
             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
                 .requestEmail()
                 .build()
             val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
@@ -86,8 +95,8 @@ class DashboardActivity : AppCompatActivity() {
         dashboardViewModel.isEmailAddedLiveData.observe(this@DashboardActivity) {
             when (it) {
                  is FirebaseResponse.Success -> {
-                     if (it.data!!) {
-                         showDialog()
+                     if (!it.data.isNullOrEmpty()) {
+                         showDialog(it.data)
                      }
                  }
                 is FirebaseResponse.Failure -> {
@@ -102,7 +111,7 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun fetchUserData() {
         ProgressDialog.initialize(this@DashboardActivity)
-        ProgressDialog.show("Loading your data")
+        ProgressDialog.show("Please wait")
         lifecycleScope.launch {
             userDataResult = dashboardViewModel.getUserData()
             when (userDataResult) {
@@ -111,17 +120,13 @@ class DashboardActivity : AppCompatActivity() {
                     if (userData != null) {
                         Utils.printDebugLog("Fetching_User_Data :: Success")
                         if (userData.calendar_events != null) {
-                            Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events}")
-                            val userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar_email_ids
+                            Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
+                            val userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
                             if (userGoogleCalendarEventsEmailIds.isNotEmpty()) {
                                 if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
                                     if (Utils.isDeviceOnline(this@DashboardActivity)) {
                                         if (isGooglePlayServicesAvailable()) {
-                                            if ((Utils.staticList as ArrayList<String>).isNotEmpty()) {
-                                                getCalendarEvents(userGoogleCalendarEventsEmailIds as ArrayList<String>)
-                                            } else {
-                                                chooseAccount()
-                                            }
+                                            getCalendarEvents(userGoogleCalendarEventsEmailIds as ArrayList<CalendarEmailData>)
                                         } else {
                                             acquireGooglePlayServices()
                                         }
@@ -154,6 +159,19 @@ class DashboardActivity : AppCompatActivity() {
                             false
                         ) {
                             ProgressDialog.dismiss()
+                            Utils.showShortToast(this@DashboardActivity, "Signing you out")
+                            FirebaseAuth.getInstance().signOut()
+
+                            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
+                                .requestEmail()
+                                .build()
+                            val mGoogleSignInClient = GoogleSignIn.getClient(this@DashboardActivity, gso)
+                            mGoogleSignInClient.signOut().addOnCompleteListener(this@DashboardActivity) {
+                                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
+                                finish()
+                                startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
+                            }
                             val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
                             startActivity(intent)
                             finish()
@@ -195,7 +213,7 @@ class DashboardActivity : AppCompatActivity() {
         accountPickerLauncher.launch(intent)
     }
 
-    private fun getCalendarEvents(emailIdList: ArrayList<String>) {
+    private fun getCalendarEvents(emailIdList: List<CalendarEmailData>) {
         googleCalendarEventsFetcher =
             GoogleCalendarEventsFetcher(
                 this@DashboardActivity,
@@ -206,7 +224,15 @@ class DashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(emailIdList)
             Utils.printDebugLog("googleCalendarEventsList: $googleCalendarEventsList")
+            ProgressDialog.dismiss()
             if (!googleCalendarEventsList.isNullOrEmpty()) {
+                for (emailData in emailIdList) {
+                    googleCalendarEventsList!!.forEach {
+                        if (emailData.email_id == it.event_source_email_id) {
+                            it.color = emailData.color
+                        }
+                    }
+                }
                 val genericEventsAdapter = GenericEventsAdapter(
                     googleCalendarEventsList!!,
                     this@DashboardActivity
@@ -250,7 +276,7 @@ class DashboardActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             if (result.data != null) {
-                dashboardViewModel.addUserEmailIdForCalendarEvents(result.data!!.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)!!)
+                chooseColorForSelectedEmailId(result.data!!.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)!!)
             } else {
                 Utils.showShortToast(this@DashboardActivity, "Something went wrong!")
             }
@@ -267,7 +293,7 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDialog() {
+    private fun showDialog(emailIdList: List<CalendarEmailData>) {
         Utils.twoOptionAlertDialog(
             this@DashboardActivity,
             "Email Added!",
@@ -280,7 +306,7 @@ class DashboardActivity : AppCompatActivity() {
             },
             {
                 Utils.showShortToast(this@DashboardActivity, "Please wait, fetching events")
-                getCalendarEvents(arrayListOf())
+                getCalendarEvents(emailIdList)
             }
         )
     }
@@ -293,6 +319,53 @@ class DashboardActivity : AppCompatActivity() {
             AppConstants.Constants.REQUEST_PERMISSION_GET_ACCOUNTS,
             Manifest.permission.GET_ACCOUNTS
         )
+    }
+
+    private fun chooseColorForSelectedEmailId(emailId: String) {
+
+        val colors = listOf(
+            Color.CYAN, Color.MAGENTA, Color.YELLOW, Color.GREEN,
+            Color.rgb(244, 164, 96),
+            Color.BLUE, Color.RED, Color.rgb(72, 61, 139),
+            Color.rgb(205, 92, 92), Color.rgb(255, 165, 0),
+            Color.rgb(102, 205, 170),
+            Color.BLACK, Color.DKGRAY
+        )
+
+        val numColumns = 5 // Desired number of columns
+        val padding = dpToPx(15, this@DashboardActivity) // Convert 15 dp to pixels
+        val spacing = dpToPx(15, this@DashboardActivity) // Set the spacing between items in dp
+
+        val recyclerView = RecyclerView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            layoutManager = GridLayoutManager(this@DashboardActivity, numColumns)
+            setPadding(padding, dpToPx(20, this@DashboardActivity), padding, padding) // Convert padding to pixels
+            adapter = ColorAdapter(this@DashboardActivity, colors) { selectedColor ->
+                // Do something with the selected color
+
+                // Change Background Color
+                Utils.printDebugLog("selected_color: $selectedColor")
+                dashboardViewModel.addUserEmailIdForCalendarEvents(emailId, selectedColor)
+//                content.setBackgroundColor(selectedColor)
+                // Change the App Bar Background Color
+//                supportActionBar?.setBackgroundDrawable(ColorDrawable(selectedColor))
+
+                colorPickerDialog.dismiss()
+            }
+            addItemDecoration(GridSpacingItemDecoration(numColumns, spacing, true))
+        }
+
+        colorPickerDialog = AlertDialog.Builder(this)
+            .setTitle("Choose a color")
+            .setView(recyclerView)
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+        colorPickerDialog.show()
     }
 
 }
