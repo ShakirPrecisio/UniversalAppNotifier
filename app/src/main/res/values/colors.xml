@@ -6,7 +6,11 @@
     <color name="light_gray">#A3A3A3</color>
     <color name="dark_text_color">#181818</color>
     <color name="light_text_color">#F3F3F3</color>
+    <color name="dark_blue">#1a457c</color>
+    <color name="light_blue">#1860BC</color>
+    <color name="dark_orange">#FF5722</color>
     <color name="sky_blue">#38B0FC</color>
+    <color name="dark_sky_blue">#0070FF</color>
     <color name="lightest_blue">#E5F5FB</color>
     <color name="indigo">#7865FE</color>
     <color name="lightest_indigo">#DFDBFE</color>

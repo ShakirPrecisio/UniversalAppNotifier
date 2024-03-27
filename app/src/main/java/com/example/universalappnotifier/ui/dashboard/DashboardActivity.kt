@@ -27,6 +27,7 @@ import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.ui.signin.SignInActivity
+import com.example.universalappnotifier.utils.DatePickerUtil
 import com.example.universalappnotifier.utils.ProgressDialog
 import com.example.universalappnotifier.utils.Utils
 import com.example.universalappnotifier.utils.Utils.dpToPx
@@ -42,18 +43,24 @@ import kotlinx.coroutines.launch
 import pub.devrel.easypermissions.EasyPermissions
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Date
 
 class DashboardActivity : AppCompatActivity() {
 
+    private lateinit var selectedFormattedDate: String
+    private lateinit var genericEventsAdapter: GenericEventsAdapter
+    private lateinit var userGoogleCalendarEventsEmailIds: List<CalendarEmailData>
     private lateinit var userDataResult: FirebaseResponse<UserData?>
     private lateinit var binding: ActivityDashboardBinding
 
     private lateinit var dashboardViewModel: DashboardViewModel
 
-    private var googleCalendarEventsList: List<GenericEventModel>? = null
+    private var googleCalendarEventsList: ArrayList<GenericEventModel> = arrayListOf()
     private lateinit var googleCalendarEventsFetcher: GoogleCalendarEventsFetcher
 
     private lateinit var colorPickerDialog: AlertDialog
+    private var unFormattedDate: Date = Calendar.getInstance().time
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,24 +80,43 @@ class DashboardActivity : AppCompatActivity() {
         binding.tvAddEmail.setOnClickListener {
             chooseAccount()
         }
-
+        selectedFormattedDate = Utils.formatDate(unFormattedDate)
+        binding.tvSelectedDate.text = selectedFormattedDate
         binding.tvSelectedDate.setOnClickListener {
-            Utils.showShortToast(this@DashboardActivity, "Signing you out")
-            FirebaseAuth.getInstance().signOut()
-
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
-                .requestEmail()
-                .build()
-            val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-            mGoogleSignInClient.signOut().addOnCompleteListener(this) {
-                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
-                finish()
-                startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
-            }
+//            Utils.showShortToast(this@DashboardActivity, "Signing you out")
+//            FirebaseAuth.getInstance().signOut()
+//
+//            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+//                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
+//                .requestEmail()
+//                .build()
+//            val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
+//            mGoogleSignInClient.signOut().addOnCompleteListener(this) {
+//                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
+//                finish()
+//                startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
+//            }
+            getDateFromUser()
         }
         fetchUserData()
         attachObservers()
+    }
+
+    private fun getDateFromUser() {
+        DatePickerUtil.showDatePickerDialog(this@DashboardActivity,
+            unFormattedDate,
+            object: DatePickerUtil.DateListener{
+                override fun onDateSelected(
+                    formattedDate: String,
+                    unFormattedDate: Date
+                ) {
+                    this@DashboardActivity.unFormattedDate = unFormattedDate
+                    binding.tvSelectedDate.text = formattedDate
+                    selectedFormattedDate = formattedDate
+                    ProgressDialog.show(this@DashboardActivity,"Please wait")
+                    getCalendarEvents()
+                }
+            })
     }
 
     private fun attachObservers() {
@@ -98,7 +124,8 @@ class DashboardActivity : AppCompatActivity() {
             when (it) {
                  is FirebaseResponse.Success -> {
                      if (!it.data.isNullOrEmpty()) {
-                         showDialog(it.data)
+                         userGoogleCalendarEventsEmailIds = it.data
+                         showDialog()
                      }
                  }
                 is FirebaseResponse.Failure -> {
@@ -112,8 +139,7 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun fetchUserData() {
-        ProgressDialog.initialize(this@DashboardActivity)
-        ProgressDialog.show("Please wait")
+        ProgressDialog.show(this@DashboardActivity,"Please wait")
         lifecycleScope.launch {
             userDataResult = dashboardViewModel.getUserData()
             when (userDataResult) {
@@ -123,12 +149,12 @@ class DashboardActivity : AppCompatActivity() {
                         Utils.printDebugLog("Fetching_User_Data :: Success")
                         if (userData.calendar_events != null) {
                             Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
-                            val userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
+                            userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
                             if (userGoogleCalendarEventsEmailIds.isNotEmpty()) {
                                 if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
                                     if (Utils.isDeviceOnline(this@DashboardActivity)) {
                                         if (isGooglePlayServicesAvailable()) {
-                                            getCalendarEvents(userGoogleCalendarEventsEmailIds as ArrayList<CalendarEmailData>)
+                                            getCalendarEvents()
                                         } else {
                                             acquireGooglePlayServices()
                                         }
@@ -209,51 +235,62 @@ class DashboardActivity : AppCompatActivity() {
             GoogleAccountCredential.usingOAuth2(
                 this@DashboardActivity,
                 arrayListOf(CalendarScopes.CALENDAR)
-            )
-                .setBackOff(ExponentialBackOff())
+            ).setBackOff(ExponentialBackOff())
         val intent = credential.newChooseAccountIntent()
         accountPickerLauncher.launch(intent)
     }
 
-    private fun getCalendarEvents(emailIdList: List<CalendarEmailData>) {
+    private fun getCalendarEvents() {
         googleCalendarEventsFetcher =
             GoogleCalendarEventsFetcher(
-                this@DashboardActivity,
                 this@DashboardActivity,
                 requestAuthorizationLauncher
             )
 
         lifecycleScope.launch {
-            googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(emailIdList)
+            Utils.printDebugLog("googleCalendarEventsList_: $googleCalendarEventsList")
+            if (googleCalendarEventsList.size>0) {
+                genericEventsAdapter.clear()
+            }
+            googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, unFormattedDate) as ArrayList<GenericEventModel>
             Utils.printDebugLog("googleCalendarEventsList: $googleCalendarEventsList")
             ProgressDialog.dismiss()
-            if (!googleCalendarEventsList.isNullOrEmpty()) {
-                for (emailData in emailIdList) {
-                    googleCalendarEventsList!!.forEach {
+            if (googleCalendarEventsList.isNotEmpty()) {
+                for (emailData in userGoogleCalendarEventsEmailIds) {
+                    googleCalendarEventsList.forEach {
                         if (emailData.email_id == it.event_source_email_id) {
                             it.color = emailData.color
                         }
                     }
                 }
-                val sortedList = sortTimestamps(googleCalendarEventsList!!)
-                val genericEventsAdapter = GenericEventsAdapter(
-                    sortedList,
+                googleCalendarEventsList = sortTimestamps(googleCalendarEventsList)
+                genericEventsAdapter = GenericEventsAdapter(
+                    googleCalendarEventsList,
                     this@DashboardActivity
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
             } else {
-                Utils.showShortToast(this@DashboardActivity, "There are no events for now!")
+                Utils.twoOptionAlertDialog(
+                    this@DashboardActivity,
+                    "No events",
+                    "There are no events for ${selectedFormattedDate}",
+                    "Okay",
+                    "Select another date",
+                    false,{},
+                    {
+                        getDateFromUser()
+                    })
             }
         }
     }
 
-    private fun sortTimestamps(genericEventsList: List<GenericEventModel>): List<GenericEventModel> {
+    private fun sortTimestamps(genericEventsList: ArrayList<GenericEventModel>): ArrayList<GenericEventModel> {
         // Define a DateTimeFormatter to parse the timestamps
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
 
         // Parse the timestamps as ZonedDateTime objects and sort them
         Utils.printDebugLog("sortTimestamps: ${genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) }}")
-        return genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) }
+        return ArrayList(genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) })
     }
 
 
@@ -306,7 +343,7 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDialog(emailIdList: List<CalendarEmailData>) {
+    private fun showDialog() {
         Utils.twoOptionAlertDialog(
             this@DashboardActivity,
             "Email Added!",
@@ -319,7 +356,7 @@ class DashboardActivity : AppCompatActivity() {
             },
             {
                 Utils.showShortToast(this@DashboardActivity, "Please wait, fetching events")
-                getCalendarEvents(emailIdList)
+                getCalendarEvents()
             }
         )
     }

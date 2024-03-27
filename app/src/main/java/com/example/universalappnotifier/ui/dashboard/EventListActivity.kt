@@ -56,7 +56,6 @@ class EventListActivity : AppCompatActivity() {
                             googleCalendarEventsFetcher =
                                 GoogleCalendarEventsFetcher(
                                     this@EventListActivity,
-                                    this@EventListActivity,
                                     requestAuthorizationLauncher)
 //                            googleCalendarEventsFetcher.fetchEvents(Utils.staticList)
                         } else {

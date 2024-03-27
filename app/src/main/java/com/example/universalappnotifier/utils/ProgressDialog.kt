@@ -11,14 +11,11 @@ object ProgressDialog {
     private var dialog: Dialog? = null
     private var isVisible = false
 
-    fun initialize(context: Context) {
+    fun show(context: Context, message: String) {
         dialog = Dialog(context)
         dialog?.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog?.setContentView(R.layout.custom_progress_dialog)
         dialog?.setCancelable(false)
-    }
-
-    fun show(message: String) {
         dialog?.findViewById<TextView>(R.id.tv_message)?.text = message
         dialog?.show()
         isVisible = true

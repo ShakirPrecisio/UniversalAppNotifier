@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -130,6 +131,12 @@ object Utils {
         val green: Int = Color.green(color)
         val blue: Int = Color.blue(color)
         return Color.argb(alpha, red, green, blue)
+    }
+
+    fun formatDate(unformattedDate: Date): String {
+        //formats the date in "27 Mar 2024 (Wed)" format
+        return SimpleDateFormat("dd MMM yyyy (EEE)", Locale.getDefault())
+            .format(unformattedDate)
     }
 
 }

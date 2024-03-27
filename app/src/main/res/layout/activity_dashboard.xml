@@ -30,14 +30,17 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            style="@style/MediumSemiBoldText"
+            style="@style/MediumBoldText"
             android:id="@+id/tv_selected_date"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="6dp"
             android:layout_width="wrap_content"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_header_title"
-            android:text="Today's Events" />
+            tools:text="24 Jan 2024 (Wed)"
+            app:drawableStartCompat="@drawable/ic_calendar_24dp"
+            android:drawablePadding="5dp"/>
 
         <TextView
             android:id="@+id/tv_add_email"

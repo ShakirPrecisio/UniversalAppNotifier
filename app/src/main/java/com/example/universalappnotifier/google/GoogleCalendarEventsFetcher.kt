@@ -23,20 +23,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.util.Date
 import java.util.Calendar as JavaUtilCalendar
 
 class GoogleCalendarEventsFetcher(
     private val context: Context,
-    private val lifecycleOwner: LifecycleOwner,
     private val requestAuthorizationLauncher: ActivityResultLauncher<Intent>) {
 
     private var emailList: List<CalendarEmailData>? = null
     private var emailDataList: ArrayList<EmailData> = arrayListOf()
 
-    suspend fun fetchEvents(newEmailList: List<CalendarEmailData>): List<GenericEventModel> {
-        emailList = newEmailList
-        Utils.printDebugLog("emailList: $emailList")
-        Utils.printDebugLog("newEmailList: $newEmailList")
+    private lateinit var unFormattedDate: Date
+
+    suspend fun fetchEvents(newEmailList: List<CalendarEmailData>, unFormattedDate: Date): List<GenericEventModel> {
+        this.emailList = newEmailList
+        this.unFormattedDate = unFormattedDate
         for (item in emailList!!) {
             val credential =
                 GoogleAccountCredential.usingOAuth2(
@@ -73,23 +74,23 @@ class GoogleCalendarEventsFetcher(
     }
 
     private suspend fun getDataFromCalendarAsync(emailData: EmailData): List<GenericEventModel> = withContext(Dispatchers.IO) {
-        val date = JavaUtilCalendar.getInstance()
-        date.set(2024, JavaUtilCalendar.MARCH, 26) // Set the year, month, and day
+        val calendar = JavaUtilCalendar.getInstance()
+        calendar.time = unFormattedDate
 
-        val now = DateTime(System.currentTimeMillis())
         val genericEventsList = ArrayList<GenericEventModel>()
         try {
-            val startOfDay = date.clone() as JavaUtilCalendar
+            val startOfDay = calendar.clone() as JavaUtilCalendar
             startOfDay.set(JavaUtilCalendar.HOUR_OF_DAY, 0)
             startOfDay.set(JavaUtilCalendar.MINUTE, 0)
             startOfDay.set(JavaUtilCalendar.SECOND, 0)
             startOfDay.set(JavaUtilCalendar.MILLISECOND, 0)
 
-            val endOfDay = date.clone() as JavaUtilCalendar
+            val endOfDay = calendar.clone() as JavaUtilCalendar
             endOfDay.set(JavaUtilCalendar.HOUR_OF_DAY, 23)
             endOfDay.set(JavaUtilCalendar.MINUTE, 59)
             endOfDay.set(JavaUtilCalendar.SECOND, 59)
             endOfDay.set(JavaUtilCalendar.MILLISECOND, 999)
+            Utils.printDebugLog("fetching_google_calendar_events_for: $calendar")
             val events = emailData.calendar_service!!.events().list("primary")
                 .setMaxResults(50)
                 .setTimeMin(DateTime(startOfDay.time))
