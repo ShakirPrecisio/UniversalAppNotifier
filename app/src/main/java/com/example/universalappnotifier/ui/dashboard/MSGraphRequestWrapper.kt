@@ -6,6 +6,7 @@ import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.example.universalappnotifier.utils.Utils
 import org.json.JSONObject
 
 
@@ -25,6 +26,8 @@ object MSGraphRequestWrapper {
         context: Context,
         graphResourceUrl: String,
         accessToken: String,
+        startDateTime: String,
+        endDateTime: String,
         responseListener: Response.Listener<JSONObject>,
         errorListener: Response.ErrorListener
     ) {
@@ -34,6 +37,10 @@ object MSGraphRequestWrapper {
         if (accessToken == null || accessToken.length == 0) {
             return
         }
+        Utils.printDebugLog("Fetching events for start: $startDateTime | end: $endDateTime")
+        // Construct the filter parameters for the URL
+        val filteredGraphResourceUrl = "$graphResourceUrl?\$filter=start/dateTime ge '$startDateTime' and end/dateTime lt '$endDateTime'"
+
         val queue = Volley.newRequestQueue(context)
         val parameters = JSONObject()
         try {
@@ -42,13 +49,13 @@ object MSGraphRequestWrapper {
             Log.d(TAG, "Failed to put parameters: $e")
         }
         val request: JsonObjectRequest = object : JsonObjectRequest(
-            Method.GET, graphResourceUrl,
+            Method.GET, filteredGraphResourceUrl,
             parameters, responseListener, errorListener
         ) {
             override fun getHeaders(): Map<String, String> {
                 val headers: MutableMap<String, String> = HashMap()
                 headers["Authorization"] = "Bearer $accessToken"
-                Log.d(TAG, "getHeaders: $accessToken")
+                Utils.printDebugLog("header: Bearer $accessToken")
                 return headers
             }
         }

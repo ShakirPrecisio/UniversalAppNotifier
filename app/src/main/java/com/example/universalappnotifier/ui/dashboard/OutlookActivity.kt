@@ -207,6 +207,8 @@ class OutlookActivity : AppCompatActivity() {
             this@OutlookActivity,
             binding.msgraphUrl.text.toString(),
             authenticationResult.accessToken,
+            "2024-03-30T00:00:00",
+            "2024-03-30T23:59:59",
             { response ->
                 Utils.printDebugLog("Response: $response")
                 displayGraphResult(response)

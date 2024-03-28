@@ -31,7 +31,7 @@ class SplashActivity : AppCompatActivity() {
 //        } else {
 //            navigate("SignInActivity")
 //        }
-        navigate("OutlookActivity")
+        navigate("TestActivity")
 
     }
 
@@ -57,6 +57,11 @@ class SplashActivity : AppCompatActivity() {
                 }
                 "OutlookActivity" -> {
                     val intent = Intent(this@SplashActivity, OutlookActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                "TestActivity" -> {
+                    val intent = Intent(this@SplashActivity, TestActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
