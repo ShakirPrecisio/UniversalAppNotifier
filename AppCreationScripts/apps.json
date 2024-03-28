@@ -87,7 +87,7 @@
              }
            },
            {
-            "settingFile": "/app/src/main/java/com/azuresamples/msalandroidapp/MSGraphRequestWrapper.java",
+            "settingFile": "/app/src/main/java/com/example/universalappnotifier/ui/dashboard/MSGraphRequestWrapper.java",
             "replaceTokens": {
                 "msgraphEndpointHost": "https://graph.microsoft.com/"
              }
