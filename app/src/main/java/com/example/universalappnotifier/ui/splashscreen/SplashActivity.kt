@@ -8,6 +8,7 @@ import com.example.universalappnotifier.R
 import com.example.universalappnotifier.databinding.ActivitySplashBinding
 import com.example.universalappnotifier.ui.dashboard.DashboardActivity
 import com.example.universalappnotifier.ui.dashboard.EventListActivity
+import com.example.universalappnotifier.ui.dashboard.OutlookActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.ui.signin.TestActivity
 import com.example.universalappnotifier.utils.Utils
@@ -25,12 +26,12 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val currentUser = getCurrentlySignedInUser()
-        if (currentUser != null){
-            navigate("DashboardActivity")
-        } else {
-            navigate("SignInActivity")
-        }
-//        navigate("DashboardActivity")
+//        if (currentUser != null){
+//            navigate("DashboardActivity")
+//        } else {
+//            navigate("SignInActivity")
+//        }
+        navigate("OutlookActivity")
 
     }
 
@@ -51,6 +52,11 @@ class SplashActivity : AppCompatActivity() {
                 }
                 "EventListActivity" -> {
                     val intent = Intent(this@SplashActivity, EventListActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                "OutlookActivity" -> {
+                    val intent = Intent(this@SplashActivity, OutlookActivity::class.java)
                     startActivity(intent)
                     finish()
                 }

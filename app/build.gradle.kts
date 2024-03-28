@@ -84,18 +84,7 @@ dependencies {
     //volley
     implementation("com.android.volley:volley:1.2.1")
 
-//    if (findProject(":msal") != null) {
-//        // For developer team only.
-//        dependencies {
-//            "localImplementation"(project(":msal"))
-//            "externalImplementation"("com.microsoft.identity.client:msal:${msalVersion}")
-//        }
-//    } else {
-//        // Downloads and Builds MSAL from maven central.
-//        implementation("com.microsoft.identity.client:msal:${msalVersion}")
-//    }
-//
-//    implementation("io.opentelemetry:opentelemetry-bom:1.18.0")
-
-//    implementation("com.microsoft.services:outlook-services:2.0.0")
+    implementation("com.microsoft.identity.client:msal:5.1.0"){
+        exclude(group = ("com.microsoft.device.display"))
+    }
 }
