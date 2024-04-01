@@ -1,27 +1,25 @@
 package com.example.universalappnotifier.ui.dashboard
 
-import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.ActionBar
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.universalappnotifier.MyApplication
 import com.example.universalappnotifier.R
+import com.example.universalappnotifier.adapters.DateListAdapter
 import com.example.universalappnotifier.adapters.GenericEventsAdapter
 import com.example.universalappnotifier.contants.AppConstants
 import com.example.universalappnotifier.databinding.ActivityDashboardBinding
+import com.example.universalappnotifier.enums.EventSource
 import com.example.universalappnotifier.firebase.FirebaseResponse
 import com.example.universalappnotifier.google.GoogleCalendarEventsFetcher
 import com.example.universalappnotifier.models.CalendarEmailData
+import com.example.universalappnotifier.models.DateItemModel
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.OutlookCalendarEmailData
 import com.example.universalappnotifier.models.UserData
@@ -39,21 +37,21 @@ import com.google.firebase.auth.FirebaseAuth
 import com.microsoft.identity.client.IAccount
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import pub.devrel.easypermissions.EasyPermissions
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 
-class DashboardActivity : AppCompatActivity() {
+class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedListener {
 
     private lateinit var googleCalendarEvents: ArrayList<GenericEventModel>
     private lateinit var outlookCalendarEvents: ArrayList<GenericEventModel>
-    private lateinit var selectedFormattedDate: String
     private lateinit var genericEventsAdapter: GenericEventsAdapter
     private lateinit var userGoogleCalendarEventsEmailIds: List<CalendarEmailData>
-    private lateinit var userOutlookCalendarEventsEmailIds: List<OutlookCalendarEmailData>
     private lateinit var userDataResult: FirebaseResponse<UserData?>
     private lateinit var binding: ActivityDashboardBinding
 
@@ -62,12 +60,15 @@ class DashboardActivity : AppCompatActivity() {
     private var googleCalendarEventsList: ArrayList<GenericEventModel> = arrayListOf()
     private lateinit var googleCalendarEventsFetcher: GoogleCalendarEventsFetcher
 
-    private var outlookCalendarEventsList: ArrayList<GenericEventModel> = arrayListOf()
     private var outlookCalendarEmailList: ArrayList<CalendarEmailData> = arrayListOf()
     private var outlookCalendarEventsFetcher: OutlookCalendarEventsFetcher? = null
 
-    private lateinit var colorPickerDialog: AlertDialog
     private var unFormattedDate: Date = Calendar.getInstance().time
+    private var selectedCalendar: Calendar? = null
+    private var selectedYear: Int? = null
+    private var selectedMonth: Int? = null
+    private var selectedDateOfMonth: Int? = null
+    private var selectedTotalDaysInMonth: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,19 +80,38 @@ class DashboardActivity : AppCompatActivity() {
             DashboardViewModelFactory(repository)
         )[DashboardViewModel::class.java]
 
-        if (!Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
-            askForPermission()
+        selectedCalendar = Calendar.getInstance()
+        selectedYear = selectedCalendar!!.get(Calendar.YEAR)
+        selectedMonth = selectedCalendar!!.get(Calendar.MONTH) + 1 // Months are 0-indexed, so add 1
+        selectedDateOfMonth = selectedCalendar!!.get(Calendar.DAY_OF_MONTH)
+        selectedCalendar!!.set(Calendar.DAY_OF_MONTH, 1)
+        selectedTotalDaysInMonth = selectedCalendar!!.getActualMaximum(Calendar.DAY_OF_MONTH)
+        println("Year: $selectedYear | Month: $selectedMonth | Day of Month: $selectedDateOfMonth")
+        println("Total number of days in the month: $selectedTotalDaysInMonth")
+        val dayList = arrayListOf<DateItemModel>()
+        for (day in 1..selectedTotalDaysInMonth!!) {
+            val localDate = LocalDate.of(selectedYear!!, selectedMonth!!, day)
+            val dayOfWeek = localDate.dayOfWeek.getDisplayName((TextStyle.SHORT), Locale.getDefault()).uppercase()
+            val date = localDate.format(DateTimeFormatter.ofPattern("dd"))
+            dayList.add(DateItemModel(selectedYear!!, selectedMonth!!, dayOfWeek, date, (selectedDateOfMonth==date.toInt())))
         }
+        unFormattedDate = selectedCalendar!!.time
+        setDateList(dayList, selectedDateOfMonth!! -1)
+        attachClickListeners()
+        fetchUserData()
+        attachObservers()
+    }
 
+    private fun attachClickListeners() {
         binding.tvAddEmail.setOnClickListener {
             val intent = Intent(this, EmailIdListActivity::class.java)
             addEmailLauncher.launch(intent)
         }
-        selectedFormattedDate = Utils.formatDate(unFormattedDate)
-        binding.tvSelectedDate.text = selectedFormattedDate
-        binding.tvSelectedDate.setOnClickListener {
+
+        binding.llCalendarTab.setOnClickListener {
             getDateFromUser()
         }
+
         binding.tvHeaderTitle.setOnClickListener {
             Utils.showShortToast(this@DashboardActivity, "Signing you out")
             FirebaseAuth.getInstance().signOut()
@@ -107,8 +127,71 @@ class DashboardActivity : AppCompatActivity() {
                 startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
             }
         }
-        fetchUserData()
-        attachObservers()
+
+        binding.tvSourceAllFilter.setOnClickListener {
+            applyEventSourceFilter(EventSource.ALL)
+        }
+
+        binding.tvSourceGoogleFilter.setOnClickListener {
+            applyEventSourceFilter(EventSource.GOOGLE)
+        }
+
+        binding.tvSourceOutlookFilter.setOnClickListener {
+            applyEventSourceFilter(EventSource.OUTLOOK)
+        }
+    }
+
+    private fun applyEventSourceFilter(eventSource: EventSource) {
+        when (eventSource) {
+            EventSource.ALL -> {
+                binding.tvSourceAllFilter.apply {
+                    setTextColor(Color.WHITE)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.dark_navy_blue)
+                }
+                binding.tvSourceGoogleFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+                binding.tvSourceOutlookFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+            }
+            EventSource.GOOGLE -> {
+                binding.tvSourceAllFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+                binding.tvSourceGoogleFilter.apply {
+                    setTextColor(Color.WHITE)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.dark_navy_blue)
+                }
+                binding.tvSourceOutlookFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+            }
+            EventSource.OUTLOOK -> {
+                binding.tvSourceAllFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+                binding.tvSourceGoogleFilter.apply {
+                    setTextColor(Color.BLACK)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.white)
+                }
+                binding.tvSourceOutlookFilter.apply {
+                    setTextColor(Color.WHITE)
+                    backgroundTintList = ContextCompat.getColorStateList(this@DashboardActivity, R.color.dark_navy_blue)
+                }
+            }
+        }
+    }
+
+    private fun setDateList(dayList: ArrayList<DateItemModel>, selectedDayPosition: Int) {
+        val dateListAdapter = DateListAdapter(dayList, this@DashboardActivity, this@DashboardActivity)
+        binding.rvDateList.adapter = dateListAdapter
+        binding.rvDateList.scrollToPosition(selectedDayPosition)
     }
 
     private fun getDateFromUser() {
@@ -120,10 +203,26 @@ class DashboardActivity : AppCompatActivity() {
                     unFormattedDate: Date
                 ) {
                     this@DashboardActivity.unFormattedDate = unFormattedDate
-                    binding.tvSelectedDate.text = formattedDate
-                    selectedFormattedDate = formattedDate
                     ProgressDialog.show(this@DashboardActivity,"Please wait")
                     getCalendarEvents()
+
+                    selectedCalendar.apply {
+                        this!!.time = unFormattedDate
+                    }
+                    selectedYear = selectedCalendar!!.get(Calendar.YEAR)
+                    selectedMonth = selectedCalendar!!.get(Calendar.MONTH) + 1 // Months are 0-indexed, so add 1
+                    selectedDateOfMonth = selectedCalendar!!.get(Calendar.DAY_OF_MONTH)
+                    selectedCalendar!!.set(Calendar.DAY_OF_MONTH, 1)
+                    val totalDaysInMonth = selectedCalendar!!.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    val dayList = arrayListOf<DateItemModel>()
+                    for (day in 1..totalDaysInMonth) {
+                        val localDate = LocalDate.of(selectedYear!!, selectedMonth!!, day)
+                        val dayOfWeek = localDate.dayOfWeek.getDisplayName((TextStyle.SHORT), Locale.getDefault()).uppercase()
+                        val date = localDate.format(DateTimeFormatter.ofPattern("dd"))
+                        dayList.add(DateItemModel(selectedYear!!,
+                            selectedMonth!!, dayOfWeek, date, (selectedDateOfMonth==date.toInt())))
+                    }
+                    setDateList(dayList, selectedDateOfMonth!! -1)
                 }
             })
     }
@@ -163,7 +262,9 @@ class DashboardActivity : AppCompatActivity() {
                         if (userData.calendar_events != null) {
                             Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
                             userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
-                            outlookCalendarEmailList = userData.calendar_events!!.outlook_calendar as ArrayList<CalendarEmailData>
+                            if (userData.calendar_events!!.outlook_calendar.isNotEmpty()) {
+                                outlookCalendarEmailList = userData.calendar_events!!.outlook_calendar as ArrayList<CalendarEmailData>
+                            }
                             if (userGoogleCalendarEventsEmailIds.isNotEmpty()) {
                                 if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
                                     if (Utils.isDeviceOnline(this@DashboardActivity)) {
@@ -175,8 +276,6 @@ class DashboardActivity : AppCompatActivity() {
                                     } else {
                                         Utils.showLongToast(this@DashboardActivity, "No internet")
                                     }
-                                } else {
-                                    askForPermission()
                                 }
                             } else {
                                 ProgressDialog.dismiss()
@@ -293,7 +392,7 @@ class DashboardActivity : AppCompatActivity() {
                 Utils.twoOptionAlertDialog(
                     this@DashboardActivity,
                     "No events",
-                    "There are no events for ${selectedFormattedDate}",
+                    "There are no events for ",
                     "Okay",
                     "Select another date",
                     false,{},
@@ -417,16 +516,6 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun askForPermission() {
-        // Request the GET_ACCOUNTS permission via a user dialog
-        EasyPermissions.requestPermissions(
-            this@DashboardActivity,
-            "This app needs to access your Google account (via Contacts).",
-            AppConstants.Constants.REQUEST_PERMISSION_GET_ACCOUNTS,
-            Manifest.permission.GET_ACCOUNTS
-        )
-    }
-
     val addEmailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
@@ -436,6 +525,10 @@ class DashboardActivity : AppCompatActivity() {
                 Utils.printDebugLog("emailIdList: $emailIdList")
             }
         }
+    }
+
+    override fun onDateSelected(data: DateItemModel) {
+        Utils.printDebugLog("data: $data")
     }
 
 

@@ -87,4 +87,7 @@ dependencies {
     implementation("com.microsoft.identity.client:msal:5.1.0"){
         exclude(group = ("com.microsoft.device.display"))
     }
+
+    //horizontal calendar view
+
 }

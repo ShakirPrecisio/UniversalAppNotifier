@@ -6,6 +6,7 @@
     <color name="light_gray">#A3A3A3</color>
     <color name="dark_text_color">#181818</color>
     <color name="light_text_color">#F3F3F3</color>
+    <color name="dark_navy_blue">#001633</color>
     <color name="dark_blue">#1a457c</color>
     <color name="light_blue">#1860BC</color>
     <color name="dark_orange">#FF5722</color>
@@ -20,4 +21,5 @@
     <color name="lightest_yellow">#FEEFD8</color>
     <color name="pink">#FE3861</color>
     <color name="lightest_pink">#FEEBEF</color>
+    <color name="red">#F44336</color>
 </resources>

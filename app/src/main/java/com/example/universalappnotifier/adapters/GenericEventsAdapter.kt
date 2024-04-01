@@ -17,7 +17,8 @@ import com.example.universalappnotifier.utils.Utils
 import com.example.universalappnotifier.utils.Utils.createFadedVersionOfColor
 
 
-class GenericEventsAdapter(private val dataList: ArrayList<GenericEventModel>, private val context: Context) : RecyclerView.Adapter<GenericEventsAdapter.ViewHolder>() {
+class GenericEventsAdapter(private val dataList: ArrayList<GenericEventModel>, private val context: Context) :
+    RecyclerView.Adapter<GenericEventsAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.event_list_item, parent, false)
