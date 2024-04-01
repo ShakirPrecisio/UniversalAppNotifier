@@ -54,12 +54,20 @@ class GenericEventsAdapter(private val dataList: ArrayList<GenericEventModel>, p
             llEventSourceLayout.background = createRoundedDrawable(data.color!!)
             tvTitle.text = data.title
             tvCreatedBy.text = context.getString(R.string.created_by, data.created_by)
-            tvStartTime.text = context.getString(R.string.start, Utils.formatTimeFromTimestamp(data.start_time.toString()))
-            tvEndTime.text = context.getString(R.string.end, Utils.formatTimeFromTimestamp(data.end_time.toString()))
+            if (data.event_source==EventSource.GOOGLE) {
+                tvStartTime.text = context.getString(R.string.start, Utils.formatTimeFromTimestamp(data.start_time.toString()))
+                tvEndTime.text = context.getString(R.string.end, Utils.formatTimeFromTimestamp(data.end_time.toString()))
+            } else if (data.event_source == EventSource.OUTLOOK) {
+                tvStartTime.text = context.getString(R.string.start, Utils.convertUTCToIndianTime(data.start_time.toString()))
+                tvEndTime.text = context.getString(R.string.end, Utils.convertUTCToIndianTime(data.end_time.toString()))
+            }
+
             tvEventSource.text = data.event_source_email_id
             tvEventSource.text = context.getString(R.string.coming_from, data.event_source_email_id)
             if (data.event_source == EventSource.GOOGLE) {
                 imgEventSource.setImageResource(R.drawable.logo_google)
+            } else if (data.event_source == EventSource.OUTLOOK) {
+                imgEventSource.setImageResource(R.drawable.ic_outlook_calendar_logo)
             }
         }
         private fun createRoundedDrawable(color: Int): Drawable {

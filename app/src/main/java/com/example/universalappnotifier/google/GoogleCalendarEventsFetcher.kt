@@ -3,7 +3,6 @@ package com.example.universalappnotifier.google
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.ActivityResultLauncher
-import androidx.lifecycle.LifecycleOwner
 import com.example.universalappnotifier.enums.EventSource
 import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.EmailData

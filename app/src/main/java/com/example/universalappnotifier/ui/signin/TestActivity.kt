@@ -3,6 +3,7 @@ package com.example.universalappnotifier.ui.signin
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.universalappnotifier.databinding.ActivityTestBinding
+import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
 import com.example.universalappnotifier.utils.Utils
 import com.microsoft.identity.client.IAccount
@@ -36,13 +37,25 @@ class TestActivity : AppCompatActivity() {
 
         outlookCalendarEventsFetcher = OutlookCalendarEventsFetcher(
                 this@TestActivity,
-                object: OutlookCalendarEventsFetcher.OutlookSingleCalendarEventsFetcherCallback{
+                object: OutlookCalendarEventsFetcher.OutlookCalendarEventsFetcherCallback{
                     override fun onAccountsListFetched(addedAccountsList: List<IAccount>) {
                         Utils.printDebugLog("onAccountsListFetched: $addedAccountsList")
+                        if (addedAccountsList.isNotEmpty()) {
+                            Utils.printDebugLog("data_data: ${addedAccountsList[0].username}")
+                            outlookCalendarEventsFetcher.callGraphApiSilentlyMultipleTimes(addedAccountsList, arrayListOf())
+                        }
                     }
 
-                    override fun onEventsFetched(graphResponse: JSONObject) {
-                        Utils.printDebugLog("onEventsFetched: $graphResponse")
+                    override fun onEmailIdAdded(emailId: String) {
+                        Utils.printDebugLog("emailId: $emailId")
+                    }
+
+                    override fun onSingleCalendarEventsFetched(graphResponse: JSONObject) {
+                        Utils.printDebugLog("onSingleCalendarEventsFetched")
+                    }
+
+                    override fun onMultipleCalendarEventsFetched(graphResponseList: ArrayList<GenericEventModel>) {
+                        Utils.printDebugLog("onMultipleCalendarEventsFetched: $graphResponseList")
                     }
 
                     override fun onUserClosedLoginPage() {
@@ -60,11 +73,15 @@ class TestActivity : AppCompatActivity() {
                 })
 
         binding.btnCallGraphInteractively.setOnClickListener {
-            outlookCalendarEventsFetcher.callGraphInteractively()
+            outlookCalendarEventsFetcher.callGraphApiInteractively()
         }
 
         binding.btnCallGraphSilently.setOnClickListener {
-            outlookCalendarEventsFetcher.callGraphSilently(binding.msgraphUrl.text.toString().toInt())
+            outlookCalendarEventsFetcher.callGraphApiSilently(binding.msgraphUrl.text.toString().toInt())
+        }
+
+        binding.btnCallSilentlyLoop.setOnClickListener {
+//            outlookCalendarEventsFetcher.callGraphApiSilentlyMultipleTimes(outlookCalendarEventsFetcher.getAccounts())
         }
 
         binding.btnRemoveAccount.setOnClickListener {

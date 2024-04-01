@@ -10,6 +10,10 @@ import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import pub.devrel.easypermissions.EasyPermissions
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -102,6 +106,22 @@ object Utils {
 
         // Format the parsed date to the desired time format
         return outputFormat.format(date)
+    }
+
+    fun convertUTCToIndianTime(utcTime: String): String {
+        // Parse the UTC time string
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS")
+        val utcDateTime = LocalDateTime.parse(utcTime, formatter)
+
+        // Convert UTC time to Indian time (IST)
+        val utcZone = ZoneId.of("UTC")
+        val indianZone = ZoneId.of("Asia/Kolkata")
+        val utcZonedDateTime = ZonedDateTime.of(utcDateTime, utcZone)
+        val indianZonedDateTime = utcZonedDateTime.withZoneSameInstant(indianZone)
+
+        // Format the Indian time
+        val indianFormatter = DateTimeFormatter.ofPattern("hh:mm a")
+        return indianZonedDateTime.format(indianFormatter)
     }
 
 

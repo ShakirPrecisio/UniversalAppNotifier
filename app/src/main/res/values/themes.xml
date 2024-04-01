@@ -10,7 +10,7 @@
     <style name="Theme.UniversalAppNotifier" parent="Base.Theme.UniversalAppNotifier" />
 
     <style name="SCREEN">
-        <item name="android:background">@color/white</item>
+        <item name="android:background">@color/sky_blue_1</item>
     </style>
 
     <style name="MediumBoldText">

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.universalappnotifier.exceptionhandling.CustomException
 import com.example.universalappnotifier.firebase.FirebaseResponse
 import com.example.universalappnotifier.models.CalendarEmailData
+import com.example.universalappnotifier.models.OutlookCalendarEmailData
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.repo.AppRepository
 import com.example.universalappnotifier.utils.Utils
@@ -15,9 +16,13 @@ import kotlinx.coroutines.launch
 
 class DashboardViewModel(private val appRepository: AppRepository) : ViewModel() {
 
-    private val _isEmailAddedMLiveData = MutableLiveData<FirebaseResponse<List<CalendarEmailData>>>()
-    val isEmailAddedLiveData: LiveData<FirebaseResponse<List<CalendarEmailData>>>
-        get() = _isEmailAddedMLiveData
+    private val _isGoogleCalendarEventsFetchedMLiveData = MutableLiveData(false)
+    val isGoogleCalendarEventsFetchedMLiveData: LiveData<Boolean>
+        get() = _isGoogleCalendarEventsFetchedMLiveData
+
+    private val _isOutlookCalendarEventsFetchedMLiveData = MutableLiveData(false)
+    val isOutlookCalendarEventsFetchedMLiveData: LiveData<Boolean>
+        get() = _isOutlookCalendarEventsFetchedMLiveData
 
 
     suspend fun getUserData(): FirebaseResponse<UserData?> {
@@ -69,29 +74,8 @@ class DashboardViewModel(private val appRepository: AppRepository) : ViewModel()
         }
     }
 
-    fun addUserEmailIdForCalendarEvents(emailId: String, color: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val currentlySignedInUser = appRepository.getCurrentLoggedInUser()
-            if (currentlySignedInUser is FirebaseResponse.Success && currentlySignedInUser.data != null) {
-                val result = appRepository.addEmailIdForCalendarEvents(currentlySignedInUser.data.uid,emailId, color)
-                Utils.printDebugLog("result: $result")
-                if (result is FirebaseResponse.Success) {
-                    _isEmailAddedMLiveData.postValue(FirebaseResponse.Success(result.data))
-                } else if (result is FirebaseResponse.Failure) {
-                    _isEmailAddedMLiveData.postValue(
-                        FirebaseResponse.Failure(
-                            result.exception
-                        )
-                    )
-                }
-            } else if (currentlySignedInUser is FirebaseResponse.Failure) {
-                _isEmailAddedMLiveData.postValue(
-                    FirebaseResponse.Failure(
-                        currentlySignedInUser.exception
-                    )
-                )
-            }
-        }
+    fun updateOutLookCalendarEventsFetchedBoolean(boolean: Boolean) {
+        _isOutlookCalendarEventsFetchedMLiveData.postValue(boolean)
     }
 
 }

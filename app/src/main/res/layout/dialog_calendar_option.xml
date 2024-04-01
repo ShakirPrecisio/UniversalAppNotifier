@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:weightSum="2"
+    android:paddingVertical="16dp">
+
+    <LinearLayout
+        android:id="@+id/ll_outlook_calendar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_weight="1">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="@string/outlook_calendar_icon"
+            android:src="@drawable/ic_outlook_calendar_logo" />
+
+        <TextView
+            style="@style/SmallRegularText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="@string/outlook_calendar" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_google_calendar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/optionImage"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="@string/outlook_calendar_icon"
+            android:src="@drawable/ic_google_calendar_logo" />
+
+        <TextView
+            android:id="@+id/optionText"
+            style="@style/SmallRegularText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="@string/google_calendar" />
+
+    </LinearLayout>
+
+</LinearLayout>
+

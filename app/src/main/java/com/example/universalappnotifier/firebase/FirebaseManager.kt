@@ -1,24 +1,19 @@
 package com.example.universalappnotifier.firebase
 
 import com.example.universalappnotifier.models.CalendarEmailData
+import com.example.universalappnotifier.models.EmailData
+import com.example.universalappnotifier.models.OutlookCalendarEmailData
 import com.example.universalappnotifier.models.UserData
-import com.example.universalappnotifier.utils.Utils
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.util.concurrent.CompletableFuture
 
 class FirebaseManager {
 
@@ -107,50 +102,7 @@ class FirebaseManager {
         }
     }
 
-    fun addUserEmailIdForCalendarEvents(
-        userId: String,
-        emailId: String,
-        color: Int
-    ): FirebaseResponse<List<CalendarEmailData>> {
-        val future = CompletableFuture<FirebaseResponse<List<CalendarEmailData>>>()
-
-        try {
-            val userReference = Firebase.database.reference
-                .child("users")
-                .child(userId)
-                .child("calendar_events")
-                .child("google_calendar")
-
-            userReference.addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val currentEmailIds = snapshot.value as? List<CalendarEmailData>?
-
-                    val updatedEmailIds = currentEmailIds?.toMutableList() ?: mutableListOf()
-
-                    updatedEmailIds.add(CalendarEmailData(emailId, color))
-
-                    userReference.setValue(updatedEmailIds)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                future.complete(FirebaseResponse.Success(updatedEmailIds.toList()))
-                            } else {
-                                future.complete(FirebaseResponse.Failure(Exception("Failed to update email IDs")))
-                            }
-                        }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    future.complete(FirebaseResponse.Failure(Exception("Database operation cancelled: ${error.message}")))
-                }
-            })
-        } catch (e: Exception) {
-            future.complete(FirebaseResponse.Failure(e))
-        }
-
-        return future.join()
-    }
-
-    suspend fun addUserEmailIdForCalendarEvents2(
+    suspend fun addUserGoogleEmailIdForCalendarEvents(
         userId: String,
         emailId: String,
         color: Int
@@ -183,6 +135,79 @@ class FirebaseManager {
         }
     }
 
+
+    suspend fun addUserOutlookEmailIdForCalendarEvents(
+        userId: String,
+        emailId: String,
+        color: Int
+    ): FirebaseResponse<List<OutlookCalendarEmailData>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val userReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("outlook_calendar")
+
+                val snapshot = userReference.get().await()
+                val currentEmailIds = snapshot.children.mapNotNull { data ->
+                    data.getValue(OutlookCalendarEmailData::class.java)
+                }
+
+                val updatedEmailIds = currentEmailIds.toMutableList()
+                updatedEmailIds.add(OutlookCalendarEmailData(emailId, color))
+
+                userReference.setValue(updatedEmailIds).await()
+
+                // Return success response
+                FirebaseResponse.Success(updatedEmailIds.toList())
+
+            } catch (e: Exception) {
+                // Return failure response
+                FirebaseResponse.Failure(e)
+            }
+        }
+    }
+
+    suspend fun getUserEmailIds(userId: String, giveGoogleEmailIds: Boolean, giveOutlookEmailIds: Boolean): FirebaseResponse<ArrayList<CalendarEmailData>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val userGoogleEmailIdsReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("google_calendar")
+
+                val userOutlookEmailIdsReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("outlook_calendar")
+
+                val snapshotGoogleEmailIds = userGoogleEmailIdsReference.get().await()
+                val userGoogleEmailIds = snapshotGoogleEmailIds.children.mapNotNull { data ->
+                    data.getValue(CalendarEmailData::class.java)
+                }
+
+                val snapshotOutlookEmailIds = userOutlookEmailIdsReference.get().await()
+                val userOutlookEmailIds = snapshotOutlookEmailIds.children.mapNotNull { data ->
+                    data.getValue(CalendarEmailData::class.java)
+                }
+
+                val emailIdList = arrayListOf<CalendarEmailData>()
+                if (giveGoogleEmailIds) {
+                    emailIdList.addAll(userGoogleEmailIds)
+                }
+                if (giveOutlookEmailIds) {
+                    emailIdList.addAll(userOutlookEmailIds)
+                }
+                FirebaseResponse.Success(emailIdList)
+
+            } catch (e: Exception) {
+                FirebaseResponse.Failure(e)
+            }
+        }
+    }
 
 
 }

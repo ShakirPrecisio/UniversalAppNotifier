@@ -9,7 +9,9 @@
     <color name="dark_blue">#1a457c</color>
     <color name="light_blue">#1860BC</color>
     <color name="dark_orange">#FF5722</color>
+    <color name="light_sky_blue">#E9F3F9</color>
     <color name="sky_blue">#38B0FC</color>
+    <color name="sky_blue_1">#D8E9F5</color>
     <color name="dark_sky_blue">#0070FF</color>
     <color name="lightest_blue">#E5F5FB</color>
     <color name="indigo">#7865FE</color>

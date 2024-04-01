@@ -8,9 +8,11 @@ import com.example.universalappnotifier.R
 import com.example.universalappnotifier.databinding.ActivitySplashBinding
 import com.example.universalappnotifier.ui.dashboard.DashboardActivity
 import com.example.universalappnotifier.ui.dashboard.EventListActivity
+import com.example.universalappnotifier.ui.dashboard.GoogleCalendarActivity
 import com.example.universalappnotifier.ui.dashboard.OutlookActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.ui.signin.TestActivity
+import com.example.universalappnotifier.ui.test.GoogleTestActivity
 import com.example.universalappnotifier.utils.Utils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -26,12 +28,13 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val currentUser = getCurrentlySignedInUser()
-//        if (currentUser != null){
-//            navigate("DashboardActivity")
-//        } else {
-//            navigate("SignInActivity")
-//        }
-        navigate("TestActivity")
+        if (currentUser != null){
+            navigate("DashboardActivity")
+        } else {
+            navigate("SignInActivity")
+        }
+//        navigate("GoogleCalendarActivity")
+//        navigate("GoogleTestActivity")
 
     }
 
@@ -62,6 +65,16 @@ class SplashActivity : AppCompatActivity() {
                 }
                 "TestActivity" -> {
                     val intent = Intent(this@SplashActivity, TestActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                "GoogleCalendarActivity" -> {
+                    val intent = Intent(this@SplashActivity, GoogleCalendarActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                "GoogleTestActivity" -> {
+                    val intent = Intent(this@SplashActivity, GoogleTestActivity::class.java)
                     startActivity(intent)
                     finish()
                 }

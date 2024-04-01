@@ -16,7 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:padding="14dp"
-        android:background="@color/lightest_yellow">
+        android:background="@color/light_sky_blue">
 
         <TextView
             style="@style/MediumBoldText"

@@ -108,7 +108,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_gravity="center_vertical"
-                    android:src="@drawable/logo_google"/>
+                    tools:src="@drawable/logo_google"/>
 
                 <TextView
                     android:id="@+id/tv_event_source"

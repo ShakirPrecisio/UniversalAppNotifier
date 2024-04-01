@@ -1,9 +1,13 @@
 <resources>
     <string name="app_name">UniversalAppNotifier</string>
     <string name="calendar_events">Calendar Events</string>
-    <string name="add_email">+ Add Email</string>
+    <string name="add_email">Add Email</string>
     <string name="created_by">Created by: %1$s</string>
     <string name="coming_from">Coming from\n%1$s</string>
     <string name="start">Start:\n%1$s</string>
     <string name="end">End:\n%1$s</string>
+    <string name="outlook_calendar">Outlook Calendar</string>
+    <string name="outlook_calendar_icon">Outlook Calendar Icon</string>
+    <string name="google_calendar">Google Calendar</string>
+    <string name="plus_add_email">+ Add Email</string>
 </resources>
