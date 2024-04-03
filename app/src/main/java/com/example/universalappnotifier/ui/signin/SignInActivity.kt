@@ -28,7 +28,7 @@ class SignInActivity : AppCompatActivity() {
         binding.cvSignInWithGoogle.setOnClickListener {
             googleSignInManager2.signInWithGoogleAccount(object : GoogleSignInCustomCallback {
                 override fun onSuccess() {
-                    Utils.printDebugLog("signInWithGoogleAccount: onSuccess")
+                    Utils.printDebugLog("signInWithGoogleAccount: onSuccess ")
                     Utils.showShortToast(this@SignInActivity, "Signed In successfully!")
                     finish()
                     startActivity(Intent(this@SignInActivity, DashboardActivity::class.java))
