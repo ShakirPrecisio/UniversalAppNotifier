@@ -40,7 +40,7 @@ class SignInActivity : AppCompatActivity() {
                 }
 
                 override fun onLoading() {
-                    Utils.printDebugLog("signInWithGoogleAccount: onLoading")
+                    Utils.printDebugLog("signInWithGoogleAccount: onLoading ")
                     Utils.showShortToast(this@SignInActivity, "Please Wait")
                 }
 
