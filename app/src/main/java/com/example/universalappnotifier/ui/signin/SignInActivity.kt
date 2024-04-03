@@ -28,16 +28,19 @@ class SignInActivity : AppCompatActivity() {
         binding.cvSignInWithGoogle.setOnClickListener {
             googleSignInManager2.signInWithGoogleAccount(object : GoogleSignInCustomCallback {
                 override fun onSuccess() {
+                    Utils.printDebugLog("signInWithGoogleAccount: onSuccess")
                     Utils.showShortToast(this@SignInActivity, "Signed In successfully!")
                     finish()
                     startActivity(Intent(this@SignInActivity, DashboardActivity::class.java))
                 }
 
                 override fun onFailure(exception: Exception) {
+                    Utils.printErrorLog("signInWithGoogleAccount: onFailure :: $exception")
                     Utils.showShortToast(this@SignInActivity, "Something went wrong! Try again.")
                 }
 
                 override fun onLoading() {
+                    Utils.printDebugLog("signInWithGoogleAccount: onLoading")
                     Utils.showShortToast(this@SignInActivity, "Please Wait")
                 }
 

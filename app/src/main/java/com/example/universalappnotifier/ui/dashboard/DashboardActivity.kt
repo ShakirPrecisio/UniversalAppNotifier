@@ -97,6 +97,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
         unFormattedDate = selectedCalendar!!.time
         setDateList(dayList, selectedDateOfMonth!! -1)
+        applyEventSourceFilter(EventSource.ALL)
         attachClickListeners()
         fetchUserData()
         attachObservers()

@@ -24,6 +24,7 @@ class GoogleSignInManager2(private val activityResultRegistry: ActivityResultReg
     private val launcher: ActivityResultLauncher<Intent> =
         activityResultRegistry.register("key", lifeCycleOwner, ActivityResultContracts.StartActivityForResult()) { result ->
             try {
+                Utils.printDebugLog("result.resultCode: ${result.resultCode} | Activity.RESULT_OK: ${Activity.RESULT_OK}")
                 if (result.resultCode == Activity.RESULT_OK) {
                     val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                     if (task.isSuccessful) {
