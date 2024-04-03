@@ -310,7 +310,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                                 .build()
                             val mGoogleSignInClient = GoogleSignIn.getClient(this@DashboardActivity, gso)
                             mGoogleSignInClient.signOut().addOnCompleteListener(this@DashboardActivity) {
-                                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
+                                Utils.printDebugLog("mGoogleSignInClient: Signing out user ")
                                 finish()
                                 startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
                             }
