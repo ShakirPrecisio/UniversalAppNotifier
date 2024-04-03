@@ -75,6 +75,7 @@
                 android:paddingVertical="6dp"
                 android:gravity="center">
                 <TextView
+                    android:id="@+id/tv_selected_month_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     tools:text="Jan"
@@ -84,6 +85,7 @@
                     android:layout_height="24dp"
                     android:src="@drawable/ic_calendar_24dp"/>
                 <TextView
+                    android:id="@+id/tv_selected_year"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     tools:text="2024"

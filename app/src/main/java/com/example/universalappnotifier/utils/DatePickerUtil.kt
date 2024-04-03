@@ -2,34 +2,32 @@ package com.example.universalappnotifier.utils
 
 import android.app.DatePickerDialog
 import android.content.Context
-import java.util.Calendar
-import java.util.Date
+import java.time.LocalDate
 
 object DatePickerUtil {
 
-    fun showDatePickerDialog(context: Context, unFormattedDate: Date, dateListener: DateListener) {
-        val calendar: Calendar = Calendar.getInstance()
-        calendar.time = unFormattedDate
+    fun showDatePickerDialog(context: Context, givenDate: LocalDate, dateListener: DateListener) {
+        Utils.printDebugLog("givenDate: $givenDate")
+        val initialYear = givenDate.year
+        val initialMonth = givenDate.monthValue - 1 // Months are 1-indexed in DatePickerDialog
+        val initialDayOfMonth = givenDate.dayOfMonth
+
         DatePickerDialog(
             context,
             { _, selectedYear, monthOfYear, dayOfMonth ->
-                calendar.set(Calendar.YEAR, selectedYear)
-                calendar.set(Calendar.MONTH, monthOfYear)
-                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                val unformattedDate = calendar.time
-                dateListener.onDateSelected(Utils.formatDate(unformattedDate), unformattedDate)
+                val selectedDate = LocalDate.of(selectedYear, monthOfYear + 1, dayOfMonth)
+                Utils.printDebugLog("selectedDate: $selectedDate")
+                dateListener.onDateSelected(selectedDate)
             },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
+            initialYear,
+            initialMonth,
+            initialDayOfMonth
         ).show()
     }
 
     interface DateListener {
-        fun onDateSelected(
-            formattedDate: String,
-            unFormattedDate: Date
-        )
+        fun onDateSelected(selectedDate: LocalDate)
     }
 
+    // Other utility methods if needed
 }

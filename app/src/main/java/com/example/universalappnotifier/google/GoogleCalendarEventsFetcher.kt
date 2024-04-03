@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.time.LocalDate
 import java.util.Date
 import java.util.Calendar as JavaUtilCalendar
 
@@ -32,11 +33,11 @@ class GoogleCalendarEventsFetcher(
     private var emailList: List<CalendarEmailData>? = null
     private var emailDataList: ArrayList<EmailData> = arrayListOf()
 
-    private lateinit var unFormattedDate: Date
+    private lateinit var unFormattedLocalDate: LocalDate
 
-    suspend fun fetchEvents(newEmailList: List<CalendarEmailData>, unFormattedDate: Date): List<GenericEventModel> {
+    suspend fun fetchEvents(newEmailList: List<CalendarEmailData>, unFormattedLocalDate: LocalDate): List<GenericEventModel> {
         this.emailList = newEmailList
-        this.unFormattedDate = unFormattedDate
+        this.unFormattedLocalDate = unFormattedLocalDate
         for (item in emailList!!) {
             val credential =
                 GoogleAccountCredential.usingOAuth2(
@@ -74,7 +75,9 @@ class GoogleCalendarEventsFetcher(
 
     private suspend fun getDataFromCalendarAsync(emailData: EmailData): List<GenericEventModel> = withContext(Dispatchers.IO) {
         val calendar = JavaUtilCalendar.getInstance()
-        calendar.time = unFormattedDate
+        calendar.set(JavaUtilCalendar.YEAR, unFormattedLocalDate.year)
+        calendar.set(JavaUtilCalendar.MONTH, unFormattedLocalDate.monthValue - 1) // Months are 0-indexed in Calendar
+        calendar.set(JavaUtilCalendar.DAY_OF_MONTH, unFormattedLocalDate.dayOfMonth)
 
         val genericEventsList = ArrayList<GenericEventModel>()
         try {

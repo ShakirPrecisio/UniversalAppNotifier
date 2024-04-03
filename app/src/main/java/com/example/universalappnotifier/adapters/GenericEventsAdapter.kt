@@ -64,7 +64,7 @@ class GenericEventsAdapter(private val dataList: ArrayList<GenericEventModel>, p
             }
 
             tvEventSource.text = data.event_source_email_id
-            tvEventSource.text = context.getString(R.string.coming_from, data.event_source_email_id)
+//            tvEventSource.text = context.getString(R.string.coming_from, data.event_source_email_id)
             if (data.event_source == EventSource.GOOGLE) {
                 imgEventSource.setImageResource(R.drawable.logo_google)
             } else if (data.event_source == EventSource.OUTLOOK) {

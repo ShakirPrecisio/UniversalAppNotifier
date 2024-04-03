@@ -21,11 +21,11 @@ import com.example.universalappnotifier.google.GoogleCalendarEventsFetcher
 import com.example.universalappnotifier.models.CalendarEmailData
 import com.example.universalappnotifier.models.DateItemModel
 import com.example.universalappnotifier.models.GenericEventModel
-import com.example.universalappnotifier.models.OutlookCalendarEmailData
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
 import com.example.universalappnotifier.ui.emailIdList.EmailIdListActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
+import com.example.universalappnotifier.utils.DateUtil
 import com.example.universalappnotifier.utils.DatePickerUtil
 import com.example.universalappnotifier.utils.ProgressDialog
 import com.example.universalappnotifier.utils.Utils
@@ -41,8 +41,6 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 
@@ -63,12 +61,13 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     private var outlookCalendarEmailList: ArrayList<CalendarEmailData> = arrayListOf()
     private var outlookCalendarEventsFetcher: OutlookCalendarEventsFetcher? = null
 
-    private var unFormattedDate: Date = Calendar.getInstance().time
-    private var selectedCalendar: Calendar? = null
-    private var selectedYear: Int? = null
-    private var selectedMonth: Int? = null
-    private var selectedDateOfMonth: Int? = null
-    private var selectedTotalDaysInMonth: Int? = null
+    private var selectedLocalDate: LocalDate = DateUtil.getCurrentDate()
+    private var selectedYear: Int = DateUtil.getCurrentYear()
+    private var selectedMonth: Int = DateUtil.getCurrentMonth()
+    private var selectedDateOfMonth = DateUtil.getOnlyCurrentDateOfMonth()
+    private var selectedTotalNumberOfDaysInMonth = DateUtil.getTotalNumberOfDaysInCurrentMonth()
+
+    private var selectedEventSource = EventSource.ALL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,24 +79,10 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             DashboardViewModelFactory(repository)
         )[DashboardViewModel::class.java]
 
-        selectedCalendar = Calendar.getInstance()
-        selectedYear = selectedCalendar!!.get(Calendar.YEAR)
-        selectedMonth = selectedCalendar!!.get(Calendar.MONTH) + 1 // Months are 0-indexed, so add 1
-        selectedDateOfMonth = selectedCalendar!!.get(Calendar.DAY_OF_MONTH)
-        selectedCalendar!!.set(Calendar.DAY_OF_MONTH, 1)
-        selectedTotalDaysInMonth = selectedCalendar!!.getActualMaximum(Calendar.DAY_OF_MONTH)
-        println("Year: $selectedYear | Month: $selectedMonth | Day of Month: $selectedDateOfMonth")
-        println("Total number of days in the month: $selectedTotalDaysInMonth")
-        val dayList = arrayListOf<DateItemModel>()
-        for (day in 1..selectedTotalDaysInMonth!!) {
-            val localDate = LocalDate.of(selectedYear!!, selectedMonth!!, day)
-            val dayOfWeek = localDate.dayOfWeek.getDisplayName((TextStyle.SHORT), Locale.getDefault()).uppercase()
-            val date = localDate.format(DateTimeFormatter.ofPattern("dd"))
-            dayList.add(DateItemModel(selectedYear!!, selectedMonth!!, dayOfWeek, date, (selectedDateOfMonth==date.toInt())))
-        }
-        unFormattedDate = selectedCalendar!!.time
-        setDateList(dayList, selectedDateOfMonth!! -1)
-        applyEventSourceFilter(EventSource.ALL)
+        Utils.printDebugLog("Details: Current_one-> localDate: $selectedLocalDate | selectedYear: $selectedYear | selectedMonth: $selectedMonth | selectedDateOfMonth: $selectedDateOfMonth | selectedTotalDaysInMonth: $selectedTotalNumberOfDaysInMonth")
+        setDateFilterList()
+        binding.tvSelectedMonthName.text = DateUtil.getSelectedMonthName(selectedLocalDate)
+        binding.tvSelectedYear.text = DateUtil.getSelectedYear(selectedLocalDate).toString()
         attachClickListeners()
         fetchUserData()
         attachObservers()
@@ -143,6 +128,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     }
 
     private fun applyEventSourceFilter(eventSource: EventSource) {
+        selectedEventSource = eventSource
         when (eventSource) {
             EventSource.ALL -> {
                 binding.tvSourceAllFilter.apply {
@@ -189,43 +175,41 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
     }
 
-    private fun setDateList(dayList: ArrayList<DateItemModel>, selectedDayPosition: Int) {
+    private fun setDateFilterList() {
+        val dayList = arrayListOf<DateItemModel>()
+        for (date in 1..selectedTotalNumberOfDaysInMonth) {
+            val localDateItem = LocalDate.of(selectedYear, selectedMonth, date)
+            val dayOfWeek = localDateItem.dayOfWeek.getDisplayName((TextStyle.SHORT), Locale.getDefault()).uppercase()
+            val formattedDate = localDateItem.format(DateTimeFormatter.ofPattern("dd"))
+            dayList.add(DateItemModel(localDateItem, selectedYear, selectedMonth, dayOfWeek, formattedDate, (selectedDateOfMonth==date)))
+        }
         val dateListAdapter = DateListAdapter(dayList, this@DashboardActivity, this@DashboardActivity)
         binding.rvDateList.adapter = dateListAdapter
-        binding.rvDateList.scrollToPosition(selectedDayPosition)
+        binding.rvDateList.scrollToPosition(selectedDateOfMonth - 1)
     }
 
     private fun getDateFromUser() {
         DatePickerUtil.showDatePickerDialog(this@DashboardActivity,
-            unFormattedDate,
+            selectedLocalDate,
             object: DatePickerUtil.DateListener{
-                override fun onDateSelected(
-                    formattedDate: String,
-                    unFormattedDate: Date
-                ) {
-                    this@DashboardActivity.unFormattedDate = unFormattedDate
+                override fun onDateSelected(selectedDate: LocalDate) {
                     ProgressDialog.show(this@DashboardActivity,"Please wait")
-                    getCalendarEvents()
-
-                    selectedCalendar.apply {
-                        this!!.time = unFormattedDate
-                    }
-                    selectedYear = selectedCalendar!!.get(Calendar.YEAR)
-                    selectedMonth = selectedCalendar!!.get(Calendar.MONTH) + 1 // Months are 0-indexed, so add 1
-                    selectedDateOfMonth = selectedCalendar!!.get(Calendar.DAY_OF_MONTH)
-                    selectedCalendar!!.set(Calendar.DAY_OF_MONTH, 1)
-                    val totalDaysInMonth = selectedCalendar!!.getActualMaximum(Calendar.DAY_OF_MONTH)
-                    val dayList = arrayListOf<DateItemModel>()
-                    for (day in 1..totalDaysInMonth) {
-                        val localDate = LocalDate.of(selectedYear!!, selectedMonth!!, day)
-                        val dayOfWeek = localDate.dayOfWeek.getDisplayName((TextStyle.SHORT), Locale.getDefault()).uppercase()
-                        val date = localDate.format(DateTimeFormatter.ofPattern("dd"))
-                        dayList.add(DateItemModel(selectedYear!!,
-                            selectedMonth!!, dayOfWeek, date, (selectedDateOfMonth==date.toInt())))
-                    }
-                    setDateList(dayList, selectedDateOfMonth!! -1)
+                    setSelectedDateData(selectedDate)
+                    setDateFilterList()
+                    Utils.printDebugLog("Details: Selected_one-> localDate: $selectedLocalDate | selectedYear: $selectedYear | selectedMonth: $selectedMonth | selectedDateOfMonth: $selectedDateOfMonth | selectedTotalDaysInMonth: $selectedTotalNumberOfDaysInMonth")
+                    getCalendarEvents1()
                 }
             })
+    }
+
+    private fun setSelectedDateData(selectedDate: LocalDate) {
+        selectedLocalDate = selectedDate
+        selectedYear = DateUtil.getSelectedYear(selectedDate)
+        selectedMonth = DateUtil.getSelectedMonth(selectedDate)
+        selectedDateOfMonth = DateUtil.getOnlySelectedDateOfMonth(selectedDate)
+        selectedTotalNumberOfDaysInMonth = DateUtil.getTotalNumberOfDaysInSelectedMonth(selectedDate)
+        binding.tvSelectedMonthName.text = DateUtil.getSelectedMonthName(selectedDate)
+        binding.tvSelectedYear.text = DateUtil.getSelectedYear(selectedDate).toString()
     }
 
     private fun attachObservers() {
@@ -270,7 +254,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                                 if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
                                     if (Utils.isDeviceOnline(this@DashboardActivity)) {
                                         if (isGooglePlayServicesAvailable()) {
-                                            getAllCalendarEvents()
+                                            getCalendarEvents()
                                         } else {
                                             acquireGooglePlayServices()
                                         }
@@ -310,7 +294,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                                 .build()
                             val mGoogleSignInClient = GoogleSignIn.getClient(this@DashboardActivity, gso)
                             mGoogleSignInClient.signOut().addOnCompleteListener(this@DashboardActivity) {
-                                Utils.printDebugLog("mGoogleSignInClient: Signing out user ")
+                                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
                                 finish()
                                 startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
                             }
@@ -344,9 +328,10 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
     }
 
-    private fun getAllCalendarEvents() {
+    private fun getCalendarEvents() {
+
         getGoogleCalendarEvents()
-        getOutlookCalendarEvents()
+//        getOutlookCalendarEvents()
 
 //        Utils.twoOptionAlertDialog(
 //            this@DashboardActivity,
@@ -360,7 +345,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
 //            })
     }
 
-    private fun getCalendarEvents() {
+    private fun getCalendarEvents1() {
         googleCalendarEventsFetcher =
             GoogleCalendarEventsFetcher(
                 this@DashboardActivity,
@@ -372,7 +357,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             if (googleCalendarEventsList.size>0) {
                 genericEventsAdapter.clear()
             }
-            googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, unFormattedDate) as ArrayList<GenericEventModel>
+            googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, selectedLocalDate) as ArrayList<GenericEventModel>
             Utils.printDebugLog("googleCalendarEventsList: $googleCalendarEventsList")
             ProgressDialog.dismiss()
             if (googleCalendarEventsList.isNotEmpty()) {
@@ -415,7 +400,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             if (googleCalendarEvents.size>0) {
                 genericEventsAdapter.clear()
             }
-            googleCalendarEvents = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, unFormattedDate) as ArrayList<GenericEventModel>
+            googleCalendarEvents = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, selectedLocalDate) as ArrayList<GenericEventModel>
             Utils.printDebugLog("googleCalendarEvents: $googleCalendarEvents")
             ProgressDialog.dismiss()
             if (googleCalendarEvents.isNotEmpty()) {
@@ -528,8 +513,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
     }
 
-    override fun onDateSelected(data: DateItemModel) {
-        Utils.printDebugLog("data: $data")
+    override fun onDateSelected(dateItemData: DateItemModel) {
+        setSelectedDateData(dateItemData.localDate)
     }
 
 

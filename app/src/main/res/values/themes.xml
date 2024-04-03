@@ -38,7 +38,7 @@
     <style name="MaterialCardViewStyle">
         <item name="cardBackgroundColor">@color/white</item>
         <item name="cardCornerRadius">15dp</item>
-        <item name="cardElevation">8dp</item>
+        <item name="cardElevation">0dp</item>
         <item name="strokeWidth">0dp</item>
     </style>
 
