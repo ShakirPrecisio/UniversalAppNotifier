@@ -13,4 +13,7 @@
     <string name="all">All</string>
     <string name="google">Google</string>
     <string name="outlook">Outlook</string>
+    <string name="sign_in_image">sign in image</string>
+    <string name="all_calendars_in_one_view">All Calendars In One View</string>
+    <string name="added_email_ids">Added Email Ids</string>
 </resources>

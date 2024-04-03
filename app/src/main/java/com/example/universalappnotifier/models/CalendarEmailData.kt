@@ -5,15 +5,18 @@ import android.os.Parcelable
 
 data class CalendarEmailData(
     var email_id: String = "",
+    var email_type: String = "",
     var color: Int = 0
 ): Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString()!!,
         parcel.readString()!!,
         parcel.readInt()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(email_id)
+        parcel.writeString(email_type)
         parcel.writeInt(color)
     }
 

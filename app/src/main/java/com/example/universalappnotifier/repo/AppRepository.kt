@@ -40,4 +40,8 @@ class AppRepository(private val firebaseManager: FirebaseManager) {
         return firebaseManager.getUserEmailIds(userId, giveGoogleEmailIds, giveOutlookEmailIds)
     }
 
+    suspend fun removeEmailId(userId: String, data: CalendarEmailData, emailIdType: String): FirebaseResponse<ArrayList<CalendarEmailData>> {
+        return firebaseManager.removeEmailId(userId, data, emailIdType)
+    }
+
 }

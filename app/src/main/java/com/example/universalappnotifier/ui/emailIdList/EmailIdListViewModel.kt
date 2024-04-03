@@ -104,4 +104,29 @@ class EmailIdListViewModel(private val appRepository: AppRepository) : ViewModel
         }
     }
 
+    fun removeEmailId(data: CalendarEmailData, emailIdType: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentlySignedInUser = appRepository.getCurrentLoggedInUser()
+            if (currentlySignedInUser is FirebaseResponse.Success && currentlySignedInUser.data != null) {
+                val result = appRepository.removeEmailId(currentlySignedInUser.data.uid, data, emailIdType)
+                Utils.printDebugLog("result: $result")
+                if (result is FirebaseResponse.Success) {
+                    _userEmailIdListMLiveData.postValue(FirebaseResponse.Success(result.data))
+                } else if (result is FirebaseResponse.Failure) {
+                    _userEmailIdListMLiveData.postValue(
+                        FirebaseResponse.Failure(
+                            result.exception
+                        )
+                    )
+                }
+            } else if (currentlySignedInUser is FirebaseResponse.Failure) {
+                _userEmailIdListMLiveData.postValue(
+                    FirebaseResponse.Failure(
+                        currentlySignedInUser.exception
+                    )
+                )
+            }
+        }
+    }
+
 }

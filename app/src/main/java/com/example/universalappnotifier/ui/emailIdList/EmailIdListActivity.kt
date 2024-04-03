@@ -1,7 +1,6 @@
 package com.example.universalappnotifier.ui.emailIdList
 
 import android.Manifest
-import android.accounts.AccountManager
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -37,13 +36,10 @@ import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.GetEventModel
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
 import com.example.universalappnotifier.utils.Utils
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
-import com.google.api.client.util.ExponentialBackOff
-import com.google.api.services.calendar.CalendarScopes
 import com.microsoft.identity.client.IAccount
 import org.json.JSONObject
 
-class EmailIdListActivity : AppCompatActivity() {
+class EmailIdListActivity : AppCompatActivity(), AddedEmailIdAdapter.EmailRemovedListener {
 
     private lateinit var emailIdList: ArrayList<CalendarEmailData>
     private lateinit var binding: ActivityEmailIdListBinding
@@ -113,7 +109,7 @@ class EmailIdListActivity : AppCompatActivity() {
                     if (!it.data.isNullOrEmpty()) {
                         Utils.printDebugLog("list_list: ${it.data}")
                         emailIdList = it.data
-                        val adapter = AddedEmailIdAdapter(it.data, this@EmailIdListActivity)
+                        val adapter = AddedEmailIdAdapter(it.data, this@EmailIdListActivity, this@EmailIdListActivity)
                         binding.rvAddedEmailIds.adapter = adapter
                     } else {
                         Utils.showShortToast(this@EmailIdListActivity, "No Email Id Added!")
@@ -396,6 +392,10 @@ class EmailIdListActivity : AppCompatActivity() {
                 googleCalendarEventsHelper.onPermissionGranted(false)
             }
         }
+    }
+
+    override fun onEmailRemoved(position: Int, itemData: CalendarEmailData) {
+        emailIdListViewModel.removeEmailId(itemData, itemData.email_type)
     }
 
 }

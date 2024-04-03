@@ -121,7 +121,7 @@ class FirebaseManager {
                 }
 
                 val updatedEmailIds = currentEmailIds.toMutableList()
-                updatedEmailIds.add(CalendarEmailData(emailId, color))
+                updatedEmailIds.add(CalendarEmailData(emailId, "google", color))
 
                 userReference.setValue(updatedEmailIds).await()
 
@@ -155,7 +155,7 @@ class FirebaseManager {
                 }
 
                 val updatedEmailIds = currentEmailIds.toMutableList()
-                updatedEmailIds.add(OutlookCalendarEmailData(emailId, color))
+                updatedEmailIds.add(OutlookCalendarEmailData(emailId, "outlook", color))
 
                 userReference.setValue(updatedEmailIds).await()
 
@@ -205,6 +205,49 @@ class FirebaseManager {
 
             } catch (e: Exception) {
                 FirebaseResponse.Failure(e)
+            }
+        }
+    }
+
+    suspend fun removeEmailId(userId: String, data: CalendarEmailData, emailIdType: String): FirebaseResponse<ArrayList<CalendarEmailData>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val userGoogleEmailIdsReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("google_calendar")
+
+                val userOutlookEmailIdsReference = databaseReference
+                    .child("users")
+                    .child(userId)
+                    .child("calendar_events")
+                    .child("outlook_calendar")
+
+                val snapshotGoogleEmailIds = userGoogleEmailIdsReference.get().await()
+                val userGoogleEmailIds = snapshotGoogleEmailIds.children.mapNotNull { data ->
+                    data.getValue(CalendarEmailData::class.java)
+                }
+
+                val snapshotOutlookEmailIds = userOutlookEmailIdsReference.get().await()
+                val userOutlookEmailIds = snapshotOutlookEmailIds.children.mapNotNull { data ->
+                    data.getValue(CalendarEmailData::class.java)
+                }
+
+                val newUserGoogleEmailIds = userGoogleEmailIds.filter { it.email_id != data.email_id }
+
+                val newUserOutlookEmailIds = userOutlookEmailIds.filter { it.email_id != data.email_id }
+
+                val emailIdList = arrayListOf<CalendarEmailData>()
+                if (emailIdType == "google") {
+                    emailIdList.addAll(newUserGoogleEmailIds)
+                }
+                if (emailIdType == "outlook") {
+                    emailIdList.addAll(newUserOutlookEmailIds)
+                }
+                FirebaseResponse.Success(emailIdList)
+            } catch (exception: Exception) {
+                FirebaseResponse.Failure(exception)
             }
         }
     }

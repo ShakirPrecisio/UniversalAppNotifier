@@ -69,7 +69,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/one_side_curved_bg"
+                android:background="@drawable/one_side_15dp_curved_bg"
                 android:backgroundTint="@color/white"
                 android:layout_weight="0.15"
                 android:paddingVertical="6dp"
