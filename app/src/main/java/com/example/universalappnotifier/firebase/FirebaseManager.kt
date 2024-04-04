@@ -121,13 +121,22 @@ class FirebaseManager {
                     data.getValue(CalendarEmailData::class.java)
                 }
 
-                val updatedEmailIds = currentEmailIds.toMutableList()
-                updatedEmailIds.add(CalendarEmailData(emailId, "google", color))
+                var isEmailIdAlreadyAdded = false
+                for (emailData in currentEmailIds) {
+                    if (emailData.email_id == emailId) {
+                        isEmailIdAlreadyAdded = true
+                        break
+                    }
+                }
 
-                userReference.setValue(updatedEmailIds).await()
-
-                // Return success response
-                FirebaseResponse.Success(updatedEmailIds.toList())
+                if (!isEmailIdAlreadyAdded) {
+                    val updatedEmailIds = currentEmailIds.toMutableList()
+                    updatedEmailIds.add(CalendarEmailData(emailId, "google", color))
+                    userReference.setValue(updatedEmailIds).await()
+                    FirebaseResponse.Success(updatedEmailIds.toList())
+                } else {
+                    FirebaseResponse.Failure(java.lang.Exception(("Email id already added.")))
+                }
 
             } catch (e: Exception) {
                 // Return failure response
@@ -155,13 +164,21 @@ class FirebaseManager {
                     data.getValue(OutlookCalendarEmailData::class.java)
                 }
 
-                val updatedEmailIds = currentEmailIds.toMutableList()
-                updatedEmailIds.add(OutlookCalendarEmailData(emailId, "outlook", color))
-
-                userReference.setValue(updatedEmailIds).await()
-
-                // Return success response
-                FirebaseResponse.Success(updatedEmailIds.toList())
+                var isEmailIdAlreadyAdded = false
+                for (emailData in currentEmailIds) {
+                    if (emailData.email_id == emailId) {
+                        isEmailIdAlreadyAdded = true
+                        break
+                    }
+                }
+                if (!isEmailIdAlreadyAdded) {
+                    val updatedEmailIds = currentEmailIds.toMutableList()
+                    updatedEmailIds.add(OutlookCalendarEmailData(emailId, "outlook", color))
+                    userReference.setValue(updatedEmailIds).await()
+                    FirebaseResponse.Success(updatedEmailIds.toList())
+                } else {
+                    FirebaseResponse.Failure(java.lang.Exception(("Email id already added.")))
+                }
 
             } catch (e: Exception) {
                 // Return failure response

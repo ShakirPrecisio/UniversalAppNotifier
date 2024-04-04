@@ -23,7 +23,6 @@ import com.example.universalappnotifier.models.DateItemModel
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
-import com.example.universalappnotifier.ui.addEmailId.AddEmailIdActivity
 import com.example.universalappnotifier.ui.emailIdList.EmailIdListActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.utils.DateUtil
@@ -75,8 +74,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
-            val isNewEmailIdAdded = data?.getBooleanExtra("is_new_email_id_added", false)
-            Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isNewEmailIdAdded")
+            val isEmailIdListUpdated = data?.getBooleanExtra("is_email_list_updated", false)
+            Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isEmailIdListUpdated")
 //            if (isNewEmailIdAdded!!) {
 //                emailIdListViewModel.getUserAddedEmailIds(
 //                    giveGoogleEmailIds = true,

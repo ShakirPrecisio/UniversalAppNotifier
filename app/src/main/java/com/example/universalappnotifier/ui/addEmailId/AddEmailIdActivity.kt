@@ -36,6 +36,7 @@ import org.json.JSONObject
 
 class AddEmailIdActivity : AppCompatActivity() {
 
+    private var isNewEmailIdAdded = false
     private lateinit var binding: ActivityAddEmailIdBinding
     
     private lateinit var addEmailIdViewModel: AddEmailIdViewModel
@@ -92,7 +93,7 @@ class AddEmailIdActivity : AppCompatActivity() {
     private fun attachClickListeners() {
 
         binding.imgBack.setOnClickListener {
-            finishThisActivity(false)
+            finishThisActivity()
         }
 
         binding.llOutlookCalendarTab.setOnClickListener {
@@ -129,11 +130,17 @@ class AddEmailIdActivity : AppCompatActivity() {
             when (it) {
                 is FirebaseResponse.Success -> {
                     if (!it.data.isNullOrEmpty()) {
+                        isNewEmailIdAdded = true
                         showSuccessDialog()
                     }
                 }
                 is FirebaseResponse.Failure -> {
-                    Utils.showShortToast(this@AddEmailIdActivity, "Something went wrong!")
+                    val message = it.exception?.message
+                    if (message == "Email id already added.") {
+                        Utils.showShortToast(this@AddEmailIdActivity, "Email id already added.")
+                    } else {
+                        Utils.showShortToast(this@AddEmailIdActivity, "Something went wrong!")
+                    }
                 }
                 is FirebaseResponse.Loading -> {
 
@@ -145,11 +152,17 @@ class AddEmailIdActivity : AppCompatActivity() {
             when (it) {
                 is FirebaseResponse.Success -> {
                     if (!it.data.isNullOrEmpty()) {
+                        isNewEmailIdAdded = true
                         showSuccessDialog()
                     }
                 }
                 is FirebaseResponse.Failure -> {
-                    Utils.showShortToast(this@AddEmailIdActivity, "Something went wrong!")
+                    val message = it.exception?.message
+                    if (message == "Email id already added.") {
+                        Utils.showShortToast(this@AddEmailIdActivity, "Email id already added.")
+                    } else {
+                        Utils.showShortToast(this@AddEmailIdActivity, "Something went wrong!")
+                    }
                 }
                 is FirebaseResponse.Loading -> {
 
@@ -350,15 +363,15 @@ class AddEmailIdActivity : AppCompatActivity() {
             "Add More",
             false,
             {
-                finishThisActivity(true)
+                finishThisActivity()
             },
             {}
         )
     }
 
-    private fun finishThisActivity(isEmailIdAdded: Boolean) {
+    private fun finishThisActivity() {
         val resultIntent = Intent()
-        resultIntent.putExtra("is_email_id_added", isEmailIdAdded)
+        resultIntent.putExtra("is_email_id_added", isNewEmailIdAdded)
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
     }
@@ -376,6 +389,14 @@ class AddEmailIdActivity : AppCompatActivity() {
                 googleCalendarEventsHelper.onPermissionGranted(false)
             }
         }
+    }
+
+    override fun onBackPressed() {
+        val intent = Intent().apply {
+            putExtra("is_email_id_added", isNewEmailIdAdded)
+        }
+        setResult(Activity.RESULT_OK, intent)
+        super.onBackPressed()
     }
 
 }

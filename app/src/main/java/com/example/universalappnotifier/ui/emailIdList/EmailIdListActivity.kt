@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import com.example.universalappnotifier.MyApplication
@@ -17,21 +16,20 @@ import com.example.universalappnotifier.utils.Utils
 
 class EmailIdListActivity : AppCompatActivity(), AddedEmailIdAdapter.EmailRemovedListener {
 
-    private var isNewEmailIdAdded = false
+    private var isEmailIdListUpdated = false
     private lateinit var emailIdList: ArrayList<CalendarEmailData>
     private lateinit var binding: ActivityEmailIdListBinding
 
     private lateinit var emailIdListViewModel: EmailIdListViewModel
 
-    // Initialize the ActivityResultLauncher
-    val addEmailIdResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val addEmailIdResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
-            Utils.printDebugLog("EmailIdListActivity: isNewEmailIdAdded: $isNewEmailIdAdded")
             if (data?.getBooleanExtra("is_email_id_added", false) != null) {
-                isNewEmailIdAdded = data.getBooleanExtra("is_email_id_added", false)!!
+                isEmailIdListUpdated = data.getBooleanExtra("is_email_id_added", false)!!
             }
-            if (isNewEmailIdAdded) {
+            Utils.printDebugLog("EmailIdListActivity: isNewEmailIdAdded: $isEmailIdListUpdated")
+            if (isEmailIdListUpdated) {
                 emailIdListViewModel.getUserAddedEmailIds(
                     giveGoogleEmailIds = true,
                     giveOutlookEmailIds = true
@@ -68,6 +66,7 @@ class EmailIdListActivity : AppCompatActivity(), AddedEmailIdAdapter.EmailRemove
         emailIdListViewModel.userEmailIdListLiveData.observe(this@EmailIdListActivity) {
             when (it) {
                 is FirebaseResponse.Success -> {
+                    isEmailIdListUpdated = true
                     if (it.data != null) {
                         emailIdList = it.data
                     }
@@ -85,64 +84,6 @@ class EmailIdListActivity : AppCompatActivity(), AddedEmailIdAdapter.EmailRemove
                 }
             }
         }
-
-        emailIdListViewModel.isGoogleEmailAddedLiveData.observe(this@EmailIdListActivity) {
-            when (it) {
-                is FirebaseResponse.Success -> {
-                    if (!it.data.isNullOrEmpty()) {
-                        showSuccessDialog()
-                    }
-                }
-                is FirebaseResponse.Failure -> {
-                    Utils.showShortToast(this@EmailIdListActivity, "Something went wrong!")
-                }
-                is FirebaseResponse.Loading -> {
-
-                }
-            }
-        }
-
-        emailIdListViewModel.isOutlookEmailAddedLiveData.observe(this@EmailIdListActivity) {
-            when (it) {
-                is FirebaseResponse.Success -> {
-                    if (!it.data.isNullOrEmpty()) {
-                        showSuccessDialog()
-                    }
-                }
-                is FirebaseResponse.Failure -> {
-                    Utils.showShortToast(this@EmailIdListActivity, "Something went wrong!")
-                }
-                is FirebaseResponse.Loading -> {
-
-                }
-            }
-        }
-    }
-
-    private fun showSuccessDialog() {
-        Utils.twoOptionAlertDialog(
-            this@EmailIdListActivity,
-            "Email Added!",
-            "Email ID Added successfully.",
-            "Add more",
-            "OKAY",
-            false,
-            {
-            },
-            {
-                emailIdListViewModel.getUserAddedEmailIds(
-                    giveGoogleEmailIds = true,
-                    giveOutlookEmailIds = true
-                )
-            }
-        )
-    }
-
-    private fun finishThisActivity(isNewEmailIdAdded: Boolean) {
-        val resultIntent = Intent()
-        resultIntent.putExtra("is_new_email_id_added", isNewEmailIdAdded)
-        setResult(Activity.RESULT_OK, resultIntent)
-        finish()
     }
 
     override fun onEmailIdRemoved(position: Int, itemData: CalendarEmailData) {
@@ -151,7 +92,7 @@ class EmailIdListActivity : AppCompatActivity(), AddedEmailIdAdapter.EmailRemove
 
     override fun onBackPressed() {
         val intent = Intent().apply {
-            putExtra("is_new_email_id_added", isNewEmailIdAdded) // Set the boolean result accordingly
+            putExtra("is_email_list_updated", isEmailIdListUpdated) // Set the boolean result accordingly
         }
         setResult(Activity.RESULT_OK, intent)
         super.onBackPressed()
