@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.universalappnotifier.R
 import com.example.universalappnotifier.models.CalendarEmailData
@@ -58,7 +57,7 @@ class AddedEmailIdAdapter(private val dataList: ArrayList<CalendarEmailData>, pr
             }
 
             imgRemoveEmail.setOnClickListener {
-                emailRemovedListener.onEmailRemoved(position, data)
+                emailRemovedListener.onEmailIdRemoved(position, data)
             }
 
         }
@@ -66,7 +65,7 @@ class AddedEmailIdAdapter(private val dataList: ArrayList<CalendarEmailData>, pr
     }
 
     interface EmailRemovedListener {
-        fun onEmailRemoved(position: Int, itemData: CalendarEmailData)
+        fun onEmailIdRemoved(position: Int, itemData: CalendarEmailData)
     }
 
 }

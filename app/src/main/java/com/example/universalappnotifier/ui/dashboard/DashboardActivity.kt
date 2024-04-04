@@ -23,6 +23,7 @@ import com.example.universalappnotifier.models.DateItemModel
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
+import com.example.universalappnotifier.ui.addEmailId.AddEmailIdActivity
 import com.example.universalappnotifier.ui.emailIdList.EmailIdListActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.utils.DateUtil
@@ -69,6 +70,22 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
 
     private var selectedEventSource = EventSource.ALL
 
+    // Initialize the ActivityResultLauncher
+    private val isNewEmailIdAddedResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
+    { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data: Intent? = result.data
+            val isNewEmailIdAdded = data?.getBooleanExtra("is_new_email_id_added", false)
+            Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isNewEmailIdAdded")
+//            if (isNewEmailIdAdded!!) {
+//                emailIdListViewModel.getUserAddedEmailIds(
+//                    giveGoogleEmailIds = true,
+//                    giveOutlookEmailIds = true
+//                )
+//            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDashboardBinding.inflate(layoutInflater)
@@ -90,8 +107,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
 
     private fun attachClickListeners() {
         binding.tvAddEmail.setOnClickListener {
-            val intent = Intent(this, EmailIdListActivity::class.java)
-            addEmailLauncher.launch(intent)
+            isNewEmailIdAddedResultLauncher.launch(Intent(this, EmailIdListActivity::class.java))
         }
 
         binding.llCalendarTab.setOnClickListener {
@@ -499,17 +515,6 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             //call events list
-        }
-    }
-
-    val addEmailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data: Intent? = result.data
-            Utils.printDebugLog("data: ${data}")
-            if (data != null) {
-                val emailIdList = data.getParcelableArrayListExtra<CalendarEmailData>("emailIdList")
-                Utils.printDebugLog("emailIdList: $emailIdList")
-            }
         }
     }
 

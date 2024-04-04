@@ -18,6 +18,9 @@
         android:theme="@style/Theme.UniversalAppNotifier"
         tools:targetApi="31">
         <activity
+            android:name=".ui.addEmailId.AddEmailIdActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.test.GoogleTestActivity"
             android:exported="false" />
         <activity
@@ -25,7 +28,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.emailIdList.EmailIdListActivity"
-            android:exported="false"/>
+            android:exported="false" />
         <activity
             android:name=".ui.dashboard.OutlookActivity"
             android:exported="false" />
@@ -49,7 +52,7 @@
             android:exported="false" />
         <activity
             android:name=".ui.dashboard.DashboardActivity"
-            android:exported="false"/>
+            android:exported="false" />
         <activity
             android:name="com.microsoft.identity.client.BrowserTabActivity"
             android:exported="true"

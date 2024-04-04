@@ -16,4 +16,6 @@
     <string name="sign_in_image">sign in image</string>
     <string name="all_calendars_in_one_view">All Calendars In One View</string>
     <string name="added_email_ids">Added Email Ids</string>
+    <string name="select_email_type">Select\nEmail Type</string>
+    <string name="which_email_select">Which Email Type Would You Like To Select?</string>
 </resources>
