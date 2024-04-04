@@ -18,4 +18,5 @@
     <string name="added_email_ids">Added Email Ids</string>
     <string name="select_email_type">Select\nEmail Type</string>
     <string name="which_email_select">Which Email Type Would You Like To Select?</string>
+    <string name="see_events_for_today">SEE EVENTS FOR TODAY</string>
 </resources>

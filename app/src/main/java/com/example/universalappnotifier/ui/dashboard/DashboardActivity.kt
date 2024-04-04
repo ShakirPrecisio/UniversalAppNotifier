@@ -4,11 +4,16 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
+import android.view.animation.TranslateAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView
 import com.example.universalappnotifier.MyApplication
 import com.example.universalappnotifier.R
 import com.example.universalappnotifier.adapters.DateListAdapter
@@ -67,6 +72,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     private var selectedDateOfMonth = DateUtil.getOnlyCurrentDateOfMonth()
     private var selectedTotalNumberOfDaysInMonth = DateUtil.getTotalNumberOfDaysInCurrentMonth()
 
+    private var currentLocalDate = selectedLocalDate
+
     private var selectedEventSource = EventSource.ALL
 
     // Initialize the ActivityResultLauncher
@@ -76,12 +83,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             val data: Intent? = result.data
             val isEmailIdListUpdated = data?.getBooleanExtra("is_email_list_updated", false)
             Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isEmailIdListUpdated")
-//            if (isNewEmailIdAdded!!) {
-//                emailIdListViewModel.getUserAddedEmailIds(
-//                    giveGoogleEmailIds = true,
-//                    giveOutlookEmailIds = true
-//                )
-//            }
+            if (isEmailIdListUpdated!!) {
+                applyEventSourceFilter(EventSource.GOOGLE)
+            }
         }
     }
 
@@ -140,6 +144,26 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         binding.tvSourceOutlookFilter.setOnClickListener {
             applyEventSourceFilter(EventSource.OUTLOOK)
         }
+
+        binding.exfabSeeTodayEvents.setOnClickListener {
+
+        }
+
+        binding.rvGenericEventsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            private var isFabVisible = true
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0 && isFabVisible) {
+                    hideFab()
+                    isFabVisible = false
+                } else if (dy < 0 && !isFabVisible) {
+                    showFab()
+                    isFabVisible = true
+                }
+            }
+        })
+
     }
 
     private fun applyEventSourceFilter(eventSource: EventSource) {
@@ -188,6 +212,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                 }
             }
         }
+//        ProgressDialog.show(this@DashboardActivity, "Getting events for ${selectedLocalDate}")
+        getCalendarEvents1()
     }
 
     private fun setDateFilterList() {
@@ -208,8 +234,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             selectedLocalDate,
             object: DatePickerUtil.DateListener{
                 override fun onDateSelected(selectedDate: LocalDate) {
-                    ProgressDialog.show(this@DashboardActivity,"Please wait")
+                    ProgressDialog.show(this@DashboardActivity, "Getting events for ${selectedDate}")
                     setSelectedDateData(selectedDate)
+                    showHideSeeTodayEventsFAB()
                     setDateFilterList()
                     Utils.printDebugLog("Details: Selected_one-> localDate: $selectedLocalDate | selectedYear: $selectedYear | selectedMonth: $selectedMonth | selectedDateOfMonth: $selectedDateOfMonth | selectedTotalDaysInMonth: $selectedTotalNumberOfDaysInMonth")
                     getCalendarEvents1()
@@ -269,7 +296,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                                 if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
                                     if (Utils.isDeviceOnline(this@DashboardActivity)) {
                                         if (isGooglePlayServicesAvailable()) {
-                                            getCalendarEvents()
+                                            applyEventSourceFilter(EventSource.GOOGLE)
                                         } else {
                                             acquireGooglePlayServices()
                                         }
@@ -284,7 +311,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                                     "No Email Id added.",
                                     "Please click on 'Add Email' to get calendar events",
                                     "Okay",
-                                    false)
+                                    false) {
+                                    isNewEmailIdAddedResultLauncher.launch(Intent(this@DashboardActivity, EmailIdListActivity::class.java))
+                                }
                             }
                         } else {
                             Utils.printDebugLog("User_Calendar_Events_Not_Found")
@@ -509,6 +538,28 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         dialog?.show()
     }
 
+    private fun hideFab() {
+        val animation = TranslateAnimation(0f, 0f, 0f, binding.exfabSeeTodayEvents.height.toFloat())
+        animation.duration = 200
+        animation.interpolator = AccelerateDecelerateInterpolator()
+        animation.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationStart(animation: Animation?) {}
+            override fun onAnimationRepeat(animation: Animation?) {}
+            override fun onAnimationEnd(animation: Animation?) {
+                binding.exfabSeeTodayEvents.isVisible = false
+            }
+        })
+        binding.exfabSeeTodayEvents.startAnimation(animation)
+    }
+
+    private fun showFab() {
+        binding.exfabSeeTodayEvents.isVisible = true
+        val animation = TranslateAnimation(0f, 0f, binding.exfabSeeTodayEvents.height.toFloat(), 0f)
+        animation.duration = 200
+        animation.interpolator = AccelerateDecelerateInterpolator()
+        binding.exfabSeeTodayEvents.startAnimation(animation)
+    }
+
     private val requestAuthorizationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -519,6 +570,21 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
 
     override fun onDateSelected(dateItemData: DateItemModel) {
         setSelectedDateData(dateItemData.localDate)
+        showHideSeeTodayEventsFAB()
+        ProgressDialog.show(this@DashboardActivity, "Getting events for ${dateItemData.localDate}")
+        getCalendarEvents1()
+    }
+
+    private fun showHideSeeTodayEventsFAB() {
+        val boolean =  ((DateUtil.getSelectedYear(selectedLocalDate) == DateUtil.getSelectedYear(currentLocalDate)) &&
+                (DateUtil.getSelectedMonth(selectedLocalDate)) == DateUtil.getSelectedMonth(currentLocalDate) &&
+                (DateUtil.getOnlySelectedDateOfMonth(selectedLocalDate) == DateUtil.getOnlySelectedDateOfMonth(currentLocalDate)))
+        Utils.printDebugLog("boolean__: $boolean")
+        if (boolean) {
+            hideFab()
+        } else {
+            showFab()
+        }
     }
 
 
