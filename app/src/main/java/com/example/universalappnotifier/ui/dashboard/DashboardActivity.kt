@@ -4,8 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
+import android.view.animation.ScaleAnimation
 import android.view.animation.TranslateAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -73,6 +76,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     private var selectedTotalNumberOfDaysInMonth = DateUtil.getTotalNumberOfDaysInCurrentMonth()
 
     private var currentLocalDate = selectedLocalDate
+    private var isTodaysDateSelected = true
+    private var isFabVisible = true
+    val ANIMATION_DURATION = 100L
 
     private var selectedEventSource = EventSource.ALL
 
@@ -84,7 +90,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             val isEmailIdListUpdated = data?.getBooleanExtra("is_email_list_updated", false)
             Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isEmailIdListUpdated")
             if (isEmailIdListUpdated!!) {
-                applyEventSourceFilter(EventSource.GOOGLE)
+                fetchUserData()
             }
         }
     }
@@ -99,7 +105,7 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             DashboardViewModelFactory(repository)
         )[DashboardViewModel::class.java]
 
-        Utils.printDebugLog("Details: Current_one-> localDate: $selectedLocalDate | selectedYear: $selectedYear | selectedMonth: $selectedMonth | selectedDateOfMonth: $selectedDateOfMonth | selectedTotalDaysInMonth: $selectedTotalNumberOfDaysInMonth")
+
         setDateFilterList()
         binding.tvSelectedMonthName.text = DateUtil.getSelectedMonthName(selectedLocalDate)
         binding.tvSelectedYear.text = DateUtil.getSelectedYear(selectedLocalDate).toString()
@@ -146,20 +152,29 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
 
         binding.exfabSeeTodayEvents.setOnClickListener {
-
+            setSelectedDateData(currentLocalDate)
+            ProgressDialog.show(this@DashboardActivity, "Getting events for $currentLocalDate")
+            showHideSeeTodayEventsFAB()
+            setDateFilterList()
+            getCalendarEvents1()
         }
 
+        val HIDE_FAB_DELAY_MS = 100L
+        val hideFabHandler = Handler(Looper.getMainLooper())
+        isFabVisible = true
         binding.rvGenericEventsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            private var isFabVisible = true
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (dy > 0 && isFabVisible) {
-                    hideFab()
-                    isFabVisible = false
-                } else if (dy < 0 && !isFabVisible) {
-                    showFab()
-                    isFabVisible = true
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!isTodaysDateSelected) {
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        hideFabHandler.removeCallbacksAndMessages(null)
+                        hideFabHandler.postDelayed({
+                            showFab()
+                        }, HIDE_FAB_DELAY_MS)
+                    } else {
+                        hideFabHandler.removeCallbacksAndMessages(null)
+                        hideFab()
+                    }
                 }
             }
         })
@@ -238,7 +253,6 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                     setSelectedDateData(selectedDate)
                     showHideSeeTodayEventsFAB()
                     setDateFilterList()
-                    Utils.printDebugLog("Details: Selected_one-> localDate: $selectedLocalDate | selectedYear: $selectedYear | selectedMonth: $selectedMonth | selectedDateOfMonth: $selectedDateOfMonth | selectedTotalDaysInMonth: $selectedTotalNumberOfDaysInMonth")
                     getCalendarEvents1()
                 }
             })
@@ -539,25 +553,27 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     }
 
     private fun hideFab() {
-        val animation = TranslateAnimation(0f, 0f, 0f, binding.exfabSeeTodayEvents.height.toFloat())
-        animation.duration = 200
-        animation.interpolator = AccelerateDecelerateInterpolator()
-        animation.setAnimationListener(object : Animation.AnimationListener {
+        isFabVisible = false
+        val hideAnimation = ScaleAnimation(1f, 0f, 1f, 0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
+        hideAnimation.duration = ANIMATION_DURATION
+        hideAnimation.fillAfter = true
+        hideAnimation.setAnimationListener(object : Animation.AnimationListener {
             override fun onAnimationStart(animation: Animation?) {}
             override fun onAnimationRepeat(animation: Animation?) {}
             override fun onAnimationEnd(animation: Animation?) {
                 binding.exfabSeeTodayEvents.isVisible = false
             }
         })
-        binding.exfabSeeTodayEvents.startAnimation(animation)
+        binding.exfabSeeTodayEvents.startAnimation(hideAnimation)
     }
 
     private fun showFab() {
+        isFabVisible = true
+        val showAnimation = ScaleAnimation(0f, 1f, 0f, 1f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f)
+        showAnimation.duration = ANIMATION_DURATION
+        showAnimation.fillAfter = true
+        binding.exfabSeeTodayEvents.startAnimation(showAnimation)
         binding.exfabSeeTodayEvents.isVisible = true
-        val animation = TranslateAnimation(0f, 0f, binding.exfabSeeTodayEvents.height.toFloat(), 0f)
-        animation.duration = 200
-        animation.interpolator = AccelerateDecelerateInterpolator()
-        binding.exfabSeeTodayEvents.startAnimation(animation)
     }
 
     private val requestAuthorizationLauncher = registerForActivityResult(
@@ -576,11 +592,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     }
 
     private fun showHideSeeTodayEventsFAB() {
-        val boolean =  ((DateUtil.getSelectedYear(selectedLocalDate) == DateUtil.getSelectedYear(currentLocalDate)) &&
-                (DateUtil.getSelectedMonth(selectedLocalDate)) == DateUtil.getSelectedMonth(currentLocalDate) &&
+        isTodaysDateSelected =  ((DateUtil.getSelectedYear(selectedLocalDate) == DateUtil.getSelectedYear(currentLocalDate)) && (DateUtil.getSelectedMonth(selectedLocalDate)) == DateUtil.getSelectedMonth(currentLocalDate) &&
                 (DateUtil.getOnlySelectedDateOfMonth(selectedLocalDate) == DateUtil.getOnlySelectedDateOfMonth(currentLocalDate)))
-        Utils.printDebugLog("boolean__: $boolean")
-        if (boolean) {
+        if (isTodaysDateSelected) {
             hideFab()
         } else {
             showFab()
