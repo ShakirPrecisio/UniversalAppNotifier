@@ -23,7 +23,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDate
-import java.util.Date
 import java.util.Calendar as JavaUtilCalendar
 
 class GoogleCalendarEventsFetcher(

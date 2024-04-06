@@ -297,12 +297,12 @@ class AddEmailIdActivity : AppCompatActivity() {
                         if (output == null || output.size == 0) {
                             Utils.printDebugLog("Google: veri yok (there is no data)")
                         } else {
-                            chooseColorForSelectedEmailId(emailId, EventSource.GOOGLE)
                             for (index in 0 until output.size) {
                                 Utils.printDebugLog(TextUtils.join("\n", output))
                                 Utils.printDebugLog("Google ${output[index].id} | ${output[index].summary} | ${output[index].startDate}")
                             }
                         }
+                        chooseColorForSelectedEmailId(emailId, EventSource.GOOGLE)
                         Utils.printDebugLog("onEventsFetched: $output")
                     }
 

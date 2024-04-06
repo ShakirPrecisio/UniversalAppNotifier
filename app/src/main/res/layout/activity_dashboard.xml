@@ -169,7 +169,11 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="12dp"
             tools:itemCount="10"
-            tools:listitem="@layout/event_list_item" />
+            tools:listitem="@layout/event_list_item"
+            android:scrollbars="vertical"
+            android:scrollbarThumbVertical="@drawable/rv_scroll_bar_design"
+            android:fadeScrollbars="false"
+            android:scrollbarSize="6dp"/>
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/exfab_see_today_events"

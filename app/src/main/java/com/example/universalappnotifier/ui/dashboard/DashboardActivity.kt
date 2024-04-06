@@ -6,10 +6,8 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.ScaleAnimation
-import android.view.animation.TranslateAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -24,6 +22,7 @@ import com.example.universalappnotifier.adapters.GenericEventsAdapter
 import com.example.universalappnotifier.contants.AppConstants
 import com.example.universalappnotifier.databinding.ActivityDashboardBinding
 import com.example.universalappnotifier.enums.EventSource
+import com.example.universalappnotifier.enums.EventTime
 import com.example.universalappnotifier.firebase.FirebaseResponse
 import com.example.universalappnotifier.google.GoogleCalendarEventsFetcher
 import com.example.universalappnotifier.models.CalendarEmailData
@@ -45,6 +44,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.microsoft.identity.client.IAccount
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -90,7 +90,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             val isEmailIdListUpdated = data?.getBooleanExtra("is_email_list_updated", false)
             Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isEmailIdListUpdated")
             if (isEmailIdListUpdated!!) {
-                fetchUserData()
+                if (Utils.isInternetAvailable(this@DashboardActivity)) {
+                    fetchUserData()
+                } else {
+                    Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+                }
             }
         }
     }
@@ -110,7 +114,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         binding.tvSelectedMonthName.text = DateUtil.getSelectedMonthName(selectedLocalDate)
         binding.tvSelectedYear.text = DateUtil.getSelectedYear(selectedLocalDate).toString()
         attachClickListeners()
-        fetchUserData()
+        if (Utils.isInternetAvailable(this@DashboardActivity)) {
+            fetchUserData()
+        } else {
+            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+        }
         attachObservers()
     }
 
@@ -156,7 +164,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             ProgressDialog.show(this@DashboardActivity, "Getting events for $currentLocalDate")
             showHideSeeTodayEventsFAB()
             setDateFilterList()
-            getCalendarEvents1()
+            if (Utils.isInternetAvailable(this@DashboardActivity)) {
+                getCalendarEvents1()
+            } else {
+                Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+            }
         }
 
         val HIDE_FAB_DELAY_MS = 100L
@@ -228,7 +240,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             }
         }
 //        ProgressDialog.show(this@DashboardActivity, "Getting events for ${selectedLocalDate}")
-        getCalendarEvents1()
+        if (Utils.isInternetAvailable(this@DashboardActivity)) {
+            getCalendarEvents1()
+        } else {
+            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+        }
     }
 
     private fun setDateFilterList() {
@@ -253,7 +269,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                     setSelectedDateData(selectedDate)
                     showHideSeeTodayEventsFAB()
                     setDateFilterList()
-                    getCalendarEvents1()
+                    if (Utils.isInternetAvailable(this@DashboardActivity)) {
+                        getCalendarEvents1()
+                    } else {
+                        Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+                    }
                 }
             })
     }
@@ -274,7 +294,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             if (it) {
                 genericEventsAdapter = GenericEventsAdapter(
                     outlookCalendarEvents,
-                    this@DashboardActivity
+                    this@DashboardActivity,
+                    System.currentTimeMillis()
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
             }
@@ -284,7 +305,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             if (it) {
                 genericEventsAdapter = GenericEventsAdapter(
                     googleCalendarEventsList,
-                    this@DashboardActivity
+                    this@DashboardActivity,
+                    System.currentTimeMillis()
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
             }
@@ -426,17 +448,52 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                         }
                     }
                 }
+                val currentTimeInMillis = System.currentTimeMillis()
+                var upcomingEventPosition = 0
+                var isScrollToPositionIndexSet = false
                 googleCalendarEventsList = sortTimestamps(googleCalendarEventsList)
+                googleCalendarEventsList.forEachIndexed { index, genericEventModel ->
+                    if (genericEventModel.event_source == EventSource.GOOGLE) {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
+                        val eventStartDate = sdf.parse(genericEventModel.start_time!!)
+                        val startTimeDiff = eventStartDate!!.time - currentTimeInMillis
+                        val eventEndDate = sdf.parse(genericEventModel.end_time!!)
+                        val endTimeDiff = eventEndDate!!.time - currentTimeInMillis
+                        genericEventModel.event_time = if (endTimeDiff < 0) {
+                            EventTime.ALREADY_PASSED
+                        } else if (startTimeDiff < 0 && endTimeDiff > 0) {
+                            if (!isScrollToPositionIndexSet) {
+                                upcomingEventPosition = index
+                                isScrollToPositionIndexSet = true
+                            }
+                            EventTime.CURRENTLY_GOING_ON
+                        } else if (startTimeDiff <= 2 * 60 * 60 * 1000) {
+                            if (!isScrollToPositionIndexSet) {
+                                upcomingEventPosition = index
+                                isScrollToPositionIndexSet = true
+                            }
+                            EventTime.UPCOMING
+                        } else {
+                            if (!isScrollToPositionIndexSet) {
+                                upcomingEventPosition = index
+                                isScrollToPositionIndexSet = true
+                            }
+                            EventTime.FUTURE
+                        }
+                    }
+                }
                 genericEventsAdapter = GenericEventsAdapter(
                     googleCalendarEventsList,
-                    this@DashboardActivity
+                    this@DashboardActivity,
+                    currentTimeInMillis
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
+                binding.rvGenericEventsList.scrollToPosition(upcomingEventPosition)
             } else {
                 Utils.twoOptionAlertDialog(
                     this@DashboardActivity,
                     "No events",
-                    "There are no events for ",
+                    "There are no events for $selectedLocalDate",
                     "Okay",
                     "Select another date",
                     false,{},
@@ -516,12 +573,10 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     }
 
     private fun sortTimestamps(genericEventsList: ArrayList<GenericEventModel>): ArrayList<GenericEventModel> {
-        // Define a DateTimeFormatter to parse the timestamps
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-
-        // Parse the timestamps as ZonedDateTime objects and sort them
-        Utils.printDebugLog("sortTimestamps: ${genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) }}")
-        return ArrayList(genericEventsList.sortedBy { ZonedDateTime.parse(it.start_time, formatter) })
+        return ArrayList(genericEventsList.sortedBy {
+            ZonedDateTime.parse(it.start_time, formatter)
+        })
     }
 
 
@@ -588,7 +643,11 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         setSelectedDateData(dateItemData.localDate)
         showHideSeeTodayEventsFAB()
         ProgressDialog.show(this@DashboardActivity, "Getting events for ${dateItemData.localDate}")
-        getCalendarEvents1()
+        if (Utils.isInternetAvailable(this@DashboardActivity)) {
+            getCalendarEvents1()
+        } else {
+            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
+        }
     }
 
     private fun showHideSeeTodayEventsFAB() {
@@ -598,6 +657,20 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
             hideFab()
         } else {
             showFab()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (googleCalendarEventsList.size > 0) {
+            genericEventsAdapter.stopAllCountdowns()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (googleCalendarEventsList.size > 0) {
+            genericEventsAdapter.stopAllCountdowns()
         }
     }
 

@@ -32,13 +32,28 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             android:padding="18dp">
+
+            <TextView
+                android:id="@+id/tv_countdown_event_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="15dp"
+                style="@style/SmallRegularText"
+                tools:text="Upcoming event: 06:30:49"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
             <TextView
                 android:id="@+id/tv_title"
                 style="@style/MediumBoldText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_countdown_event_time"
                 app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="4dp"
                 tools:text="Event Summary Will Come Here"
                 android:textSize="14sp"
                 android:gravity="start"/>
