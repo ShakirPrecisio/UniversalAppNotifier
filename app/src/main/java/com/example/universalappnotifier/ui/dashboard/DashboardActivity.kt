@@ -425,6 +425,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     }
 
     private fun getCalendarEvents1() {
+        cancelCountdownsIfStarted()
         googleCalendarEventsFetcher =
             GoogleCalendarEventsFetcher(
                 this@DashboardActivity,
@@ -677,13 +678,15 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
     override fun onPause() {
         super.onPause()
-        if (googleCalendarEventsList.size > 0) {
-            genericEventsAdapter.stopAllCountdowns()
-        }
+        cancelCountdownsIfStarted()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        cancelCountdownsIfStarted()
+    }
+
+    private fun cancelCountdownsIfStarted() {
         if (googleCalendarEventsList.size > 0) {
             genericEventsAdapter.stopAllCountdowns()
         }
@@ -694,19 +697,18 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             R.id.item_add_email_id -> {
                 binding.drawerLayout.closeDrawer(GravityCompat.START)
                 isNewEmailIdAddedResultLauncher.launch(Intent(this, EmailIdListActivity::class.java))
-                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_home")
             }
             R.id.item_privacy_policy -> {
-                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_message")
+                return false
             }
             R.id.item_terms_and_conditions -> {
-                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_sync")
+                return false
             }
             R.id.item_app_version -> {
-                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_trash")
                 return false
             }
             R.id.item_sign_out -> {
+                cancelCountdownsIfStarted()
                 Utils.showShortToast(this@DashboardActivity, "Signing you out")
                 FirebaseAuth.getInstance().signOut()
 
@@ -722,7 +724,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 }
             }
             else -> {
-                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: else")
+                return false
             }
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)

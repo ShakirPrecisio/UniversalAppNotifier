@@ -102,6 +102,7 @@ class GoogleCalendarEventsFetcher(
             val items = events.items
 
             for (event in items) {
+                Utils.printDebugLog("Google_Event: $event")
                 val genericEventData = prepareGenericEventData(emailData, event)
                 if (genericEventData != null) {
                     genericEventsList.add(genericEventData)
