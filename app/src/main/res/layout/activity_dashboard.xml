@@ -1,191 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.drawerlayout.widget.DrawerLayout
+    android:id="@+id/drawer_layout"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    tools:openDrawer="start"
     tools:context=".ui.dashboard.DashboardActivity"
     style="@style/SCREEN">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/cl_top_event_list_header"
-        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:padding="18dp"
-        android:background="@color/light_sky_blue">
+        android:layout_height="match_parent">
 
-        <TextView
-            style="@style/MediumBoldText"
-            android:id="@+id/tv_header_title"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:text="@string/calendar_events"
-            android:textSize="18sp"
-            app:layout_constraintStart_toStartOf="parent"
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/tool_bar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <TextView
-            android:id="@+id/tv_add_email"
-            android:gravity="center"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:text="@string/add_email"
-            android:textColor="@color/sky_blue"
-            android:textSize="16sp"
-            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:elevation="4dp"
+            android:background="@color/sky_blue"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/cl_top_event_list_header_2"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/cl_top_event_list_header"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:background="@drawable/square_rounded_corners"
-        android:backgroundTint="@color/sky_blue_1">
-
-        <LinearLayout
-            android:id="@+id/ll_date_layout"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cl_top_event_list_header_2"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tool_bar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="4dp"
-            android:orientation="horizontal"
-            android:weightSum="1">
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@drawable/square_rounded_corners"
+            android:backgroundTint="@color/sky_blue_1">
+
             <LinearLayout
-                android:id="@+id/ll_calendar_tab"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/one_side_15dp_curved_bg"
-                android:backgroundTint="@color/white"
-                android:layout_weight="0.15"
-                android:paddingVertical="6dp"
-                android:gravity="center">
-                <TextView
-                    android:id="@+id/tv_selected_month_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:text="Jan"
-                    style="@style/MediumSemiBoldText"/>
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_calendar_24dp"/>
-                <TextView
-                    android:id="@+id/tv_selected_year"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:text="2024"
-                    style="@style/MediumSemiBoldText"/>
-            </LinearLayout>
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.85">
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_date_list"
+                android:id="@+id/ll_date_layout"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="4dp"
+                android:orientation="horizontal"
+                android:weightSum="1">
+                <LinearLayout
+                    android:id="@+id/ll_calendar_tab"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    tools:listitem="@layout/date_list_item"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"/>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </LinearLayout>
+                    android:orientation="vertical"
+                    android:background="@drawable/one_side_15dp_curved_bg"
+                    android:backgroundTint="@color/white"
+                    android:layout_weight="0.15"
+                    android:paddingVertical="6dp"
+                    android:gravity="center">
+                    <TextView
+                        android:id="@+id/tv_selected_month_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:text="Jan"
+                        style="@style/MediumSemiBoldText"/>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_calendar_24dp"/>
+                    <TextView
+                        android:id="@+id/tv_selected_year"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:text="2024"
+                        style="@style/MediumSemiBoldText"/>
+                </LinearLayout>
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.85">
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_date_list"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:listitem="@layout/date_list_item"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/ll_service_options"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/ll_date_layout"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp"
-            android:layout_marginHorizontal="16dp"
-            android:orientation="horizontal"
-            android:weightSum="3">
-            <TextView
-                android:id="@+id/tv_source_all_filter"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/ll_service_options"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/square_slight_rounded_corners"
-                android:backgroundTint="@color/white"
-                android:paddingVertical="6dp"
-                android:layout_weight="1"
-                android:text="@string/all"
-                style="@style/SmallRegularText"/>
+                app:layout_constraintTop_toBottomOf="@id/ll_date_layout"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="16dp"
+                android:orientation="horizontal"
+                android:weightSum="3">
+                <TextView
+                    android:id="@+id/tv_source_all_filter"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/square_slight_rounded_corners"
+                    android:backgroundTint="@color/white"
+                    android:paddingVertical="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/all"
+                    style="@style/SmallRegularText"/>
 
-            <TextView
-                android:id="@+id/tv_source_google_filter"
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/tv_source_google_filter"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/square_slight_rounded_corners"
+                    android:backgroundTint="@color/white"
+                    android:paddingVertical="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/google"
+                    style="@style/SmallRegularText"/>
+
+                <TextView
+                    android:id="@+id/tv_source_outlook_filter"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/square_slight_rounded_corners"
+                    android:backgroundTint="@color/white"
+                    android:paddingVertical="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/outlook"
+                    style="@style/SmallRegularText"/>
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_generic_events_list"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintTop_toBottomOf="@id/ll_service_options"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="12dp"
+                tools:itemCount="10"
+                tools:listitem="@layout/event_list_item"
+                android:scrollbars="vertical"
+                android:scrollbarThumbVertical="@drawable/rv_scroll_bar_design"
+                android:fadeScrollbars="false"
+                android:scrollbarSize="6dp"/>
+
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/exfab_see_today_events"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/square_slight_rounded_corners"
-                android:backgroundTint="@color/white"
-                android:paddingVertical="6dp"
-                android:layout_weight="1"
-                android:text="@string/google"
-                style="@style/SmallRegularText"/>
+                android:layout_margin="12dp"
+                android:text="@string/see_events_for_today"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:backgroundTint="@color/sky_blue"
+                android:textColor="@color/white"
+                android:visibility="gone"/>
 
-            <TextView
-                android:id="@+id/tv_source_outlook_filter"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/square_slight_rounded_corners"
-                android:backgroundTint="@color/white"
-                android:paddingVertical="6dp"
-                android:layout_weight="1"
-                android:text="@string/outlook"
-                style="@style/SmallRegularText"/>
-
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_generic_events_list"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:orientation="vertical"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintTop_toBottomOf="@id/ll_service_options"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="12dp"
-            tools:itemCount="10"
-            tools:listitem="@layout/event_list_item"
-            android:scrollbars="vertical"
-            android:scrollbarThumbVertical="@drawable/rv_scroll_bar_design"
-            android:fadeScrollbars="false"
-            android:scrollbarSize="6dp"/>
-
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/exfab_see_today_events"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:text="@string/see_events_for_today"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:backgroundTint="@color/sky_blue"
-            android:textColor="@color/white"
-            android:visibility="gone"/>
-
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/nav_menu"
+        app:headerLayout="@layout/nav_header"
+        app:itemIconTint="@color/black"
+        app:itemTextColor="@color/black"/>
+
+</androidx.drawerlayout.widget.DrawerLayout>

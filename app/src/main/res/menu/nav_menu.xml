@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+   <group
+       android:checkableBehavior="single">
+       <item
+           android:id="@+id/item_add_email_id"
+           android:icon="@drawable/ic_add_email"
+           android:title="@string/add_email"/>
+
+       <item
+           android:id="@+id/item_privacy_policy"
+           android:icon="@drawable/ic_privacy_policy"
+           android:title="@string/privacy_policy"/>
+
+       <item
+           android:id="@+id/item_terms_and_conditions"
+           android:icon="@drawable/ic_terms_and_conditions"
+           android:title="@string/terms_n_conditions"/>
+
+       <item
+           android:id="@+id/item_app_version"
+           android:icon="@drawable/ic_app_version"
+           android:title="App Version: 1.0.0"/>
+
+       <item
+           android:id="@+id/item_sign_out"
+           android:icon="@drawable/ic_sign_out"
+           android:title="@string/sign_out"/>
+   </group>
+
+</menu>

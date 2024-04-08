@@ -6,11 +6,15 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.MenuItem
 import android.view.animation.Animation
 import android.view.animation.ScaleAnimation
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -40,6 +44,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.microsoft.identity.client.IAccount
 import kotlinx.coroutines.launch
@@ -52,7 +57,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 
-class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedListener {
+class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, DateListAdapter.OnDateSelectedListener {
 
     private lateinit var googleCalendarEvents: ArrayList<GenericEventModel>
     private lateinit var outlookCalendarEvents: ArrayList<GenericEventModel>
@@ -60,6 +65,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     private lateinit var userGoogleCalendarEventsEmailIds: List<CalendarEmailData>
     private lateinit var userDataResult: FirebaseResponse<UserData?>
     private lateinit var binding: ActivityDashboardBinding
+
+    lateinit var toggle: ActionBarDrawerToggle
 
     private lateinit var dashboardViewModel: DashboardViewModel
 
@@ -103,6 +110,15 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         super.onCreate(savedInstanceState)
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        toggle = ActionBarDrawerToggle(this@DashboardActivity, binding.drawerLayout,binding.toolBar, R.string.open, R.string.close)
+        binding.drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+
+        setSupportActionBar(binding.toolBar)
+
+        binding.navView.setNavigationItemSelectedListener(this)
+
         val repository = (application as MyApplication).appRepository
         dashboardViewModel = ViewModelProvider(
             this,
@@ -123,28 +139,9 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
     }
 
     private fun attachClickListeners() {
-        binding.tvAddEmail.setOnClickListener {
-            isNewEmailIdAddedResultLauncher.launch(Intent(this, EmailIdListActivity::class.java))
-        }
 
         binding.llCalendarTab.setOnClickListener {
             getDateFromUser()
-        }
-
-        binding.tvHeaderTitle.setOnClickListener {
-            Utils.showShortToast(this@DashboardActivity, "Signing you out")
-            FirebaseAuth.getInstance().signOut()
-
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
-                .requestEmail()
-                .build()
-            val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-            mGoogleSignInClient.signOut().addOnCompleteListener(this) {
-                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
-                finish()
-                startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
-            }
         }
 
         binding.tvSourceAllFilter.setOnClickListener {
@@ -322,6 +319,8 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
                     val userData = (userDataResult as FirebaseResponse.Success<UserData?>).data
                     if (userData != null) {
                         Utils.printDebugLog("Fetching_User_Data :: Success")
+                        binding.drawerLayout.findViewById<TextView>(R.id.tv_user_name).text =  userData.user_name
+                        binding.drawerLayout.findViewById<TextView>(R.id.tv_user_email_id).text =  userData.user_email
                         if (userData.calendar_events != null) {
                             Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
                             userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
@@ -660,6 +659,22 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         }
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item)) {
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onBackPressed() {
+        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+//            onBackInvokedDispatcher.onBackPressed()
+            super.onBackPressed()
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         if (googleCalendarEventsList.size > 0) {
@@ -672,6 +687,46 @@ class DashboardActivity : AppCompatActivity(), DateListAdapter.OnDateSelectedLis
         if (googleCalendarEventsList.size > 0) {
             genericEventsAdapter.stopAllCountdowns()
         }
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId)  {
+            R.id.item_add_email_id -> {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+                isNewEmailIdAddedResultLauncher.launch(Intent(this, EmailIdListActivity::class.java))
+                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_home")
+            }
+            R.id.item_privacy_policy -> {
+                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_message")
+            }
+            R.id.item_terms_and_conditions -> {
+                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_sync")
+            }
+            R.id.item_app_version -> {
+                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: nav_trash")
+                return false
+            }
+            R.id.item_sign_out -> {
+                Utils.showShortToast(this@DashboardActivity, "Signing you out")
+                FirebaseAuth.getInstance().signOut()
+
+                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
+                    .requestEmail()
+                    .build()
+                val mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
+                mGoogleSignInClient.signOut().addOnCompleteListener(this) {
+                    Utils.printDebugLog("mGoogleSignInClient: Signing out user")
+                    finish()
+                    startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
+                }
+            }
+            else -> {
+                Utils.showShortToast(this@DashboardActivity, "setNavigationItemSelectedListener: else")
+            }
+        }
+        binding.drawerLayout.closeDrawer(GravityCompat.START)
+        return true
     }
 
 

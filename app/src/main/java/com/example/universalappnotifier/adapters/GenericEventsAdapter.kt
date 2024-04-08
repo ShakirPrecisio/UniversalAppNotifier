@@ -106,7 +106,7 @@ class GenericEventsAdapter(
                         val minutes = (seconds % 3600) / 60
                         val secs = seconds % 60
                         val countdownText = String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, secs)
-                        tvCountDownEventTime.text = "Upcoming event: $countdownText"
+                        tvCountDownEventTime.text = "Upcoming event: ${countdownText}s"
                         Utils.printDebugLog("Upcoming event: $countdownText")
                     }
                     override fun onFinish() {

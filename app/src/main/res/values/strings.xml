@@ -19,4 +19,9 @@
     <string name="select_email_type">Select\nEmail Type</string>
     <string name="which_email_select">Which Email Type Would You Like To Select?</string>
     <string name="see_events_for_today">SEE EVENTS FOR TODAY</string>
+    <string name="close">Close</string>
+    <string name="open">Open</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_n_conditions"><![CDATA[Terms & Conditions]]></string>
+    <string name="sign_out">Sign Out</string>
 </resources>
