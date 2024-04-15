@@ -22,4 +22,5 @@
     <color name="pink">#FE3861</color>
     <color name="lightest_pink">#FEEBEF</color>
     <color name="red">#F44336</color>
+    <color name="greyColor">#989696</color>
 </resources>

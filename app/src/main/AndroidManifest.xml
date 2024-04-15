@@ -18,6 +18,9 @@
         android:theme="@style/Theme.UniversalAppNotifier"
         tools:targetApi="31">
         <activity
+            android:name=".ui.googleCalEventsDetail.GoogleCalendarEventDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.addEmailId.AddEmailIdActivity"
             android:exported="false" />
         <activity

@@ -6,6 +6,7 @@ import com.example.universalappnotifier.enums.EventTime
 data class GenericEventModel(
     var event_time: EventTime? = null,
     var event_source: EventSource? = null,
+    var source_event_id: String? = null,
     var event_source_email_id: String? = null,
     var created_by: String? = null,
     var title: String? = null,

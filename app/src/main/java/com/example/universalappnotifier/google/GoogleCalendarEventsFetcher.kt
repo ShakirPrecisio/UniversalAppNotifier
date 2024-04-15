@@ -41,7 +41,7 @@ class GoogleCalendarEventsFetcher(
             val credential =
                 GoogleAccountCredential.usingOAuth2(
                     context,
-                    arrayListOf(CalendarScopes.CALENDAR)
+                    CalendarScopes.all()
                 ).setBackOff(ExponentialBackOff())
             credential!!.selectedAccountName = item.email_id
             val transport = AndroidHttp.newCompatibleTransport()
@@ -119,6 +119,7 @@ class GoogleCalendarEventsFetcher(
     private fun prepareGenericEventData(emailData: EmailData, event: Event?): GenericEventModel? {
         return if (event!=null) {
             val genericEventData = GenericEventModel()
+            genericEventData.source_event_id = event.id
             genericEventData.event_source = EventSource.GOOGLE
             genericEventData.event_source_email_id = emailData.email_id
             genericEventData.created_by = event.creator.email

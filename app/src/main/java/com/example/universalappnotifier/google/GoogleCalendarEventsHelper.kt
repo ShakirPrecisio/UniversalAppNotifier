@@ -27,20 +27,26 @@ import com.google.api.client.util.DateTime
 import com.google.api.client.util.ExponentialBackOff
 import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
+import com.google.api.services.calendar.model.Event
+import com.google.api.services.calendar.model.EventAttendee
+import com.google.api.services.calendar.model.EventDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import kotlin.Exception
 
-class GoogleCalendarEventsHelper(private val context: Context,
-                                 private val lifecycleOwner: LifecycleOwner,
-                                 private val accountPickerLauncher: ActivityResultLauncher<Intent>,
-                                 private val authorizationLauncher: ActivityResultLauncher<Intent>,
-                                 private val googlePlayServicesLauncher: ActivityResultLauncher<Intent>,
-                                 private val googleCallbackInterface: GoogleCallbackInterface) {
+class GoogleCalendarEventsHelper(
+    private val context: Context,
+    private val lifecycleOwner: LifecycleOwner,
+    private val accountPickerLauncher: ActivityResultLauncher<Intent>?,
+    private val authorizationLauncher: ActivityResultLauncher<Intent>?,
+    private val googlePlayServicesLauncher: ActivityResultLauncher<Intent>?,
+    private val googleCallbackInterface: GoogleCallbackInterface
+) {
 
     private var mCredential: GoogleAccountCredential? = null
     private var mService: Calendar? = null
@@ -54,7 +60,7 @@ class GoogleCalendarEventsHelper(private val context: Context,
     private fun initCredentials() {
         mCredential = GoogleAccountCredential.usingOAuth2(
             context,
-            arrayListOf(CalendarScopes.CALENDAR)
+            CalendarScopes.all()
         )
             .setBackOff(ExponentialBackOff())
         initCalendarBuild(mCredential)
@@ -81,7 +87,8 @@ class GoogleCalendarEventsHelper(private val context: Context,
             googleCallbackInterface.onError(
                 CustomException(
                     AppErrorCode.GET_ACCOUNTS_PERMISSION_STILL_NOT_GRANTED,
-                    AppErrorMessages.GET_ACCOUNTS_PERMISSION_STILL_NOT_GRANTED)
+                    AppErrorMessages.GET_ACCOUNTS_PERMISSION_STILL_NOT_GRANTED
+                )
             )
         }
     }
@@ -93,10 +100,10 @@ class GoogleCalendarEventsHelper(private val context: Context,
         val credential =
             GoogleAccountCredential.usingOAuth2(
                 context,
-                arrayListOf(CalendarScopes.CALENDAR)
+                CalendarScopes.all()
             ).setBackOff(ExponentialBackOff())
         val intent = credential.newChooseAccountIntent()
-        accountPickerLauncher.launch(intent)
+        accountPickerLauncher?.launch(intent)
     }
 
     fun handleChooseAccountResult(result: ActivityResult) {
@@ -110,10 +117,20 @@ class GoogleCalendarEventsHelper(private val context: Context,
                     emailId = accountName
                     makeRequest()
                 } else {
-                    googleCallbackInterface.onError(CustomException(AppErrorCode.SOMETHING_WENT_WRONG, AppErrorMessages.SOMETHING_WENT_WRONG))
+                    googleCallbackInterface.onError(
+                        CustomException(
+                            AppErrorCode.SOMETHING_WENT_WRONG,
+                            AppErrorMessages.SOMETHING_WENT_WRONG
+                        )
+                    )
                 }
             } else {
-                googleCallbackInterface.onError(CustomException(AppErrorCode.SOMETHING_WENT_WRONG, AppErrorMessages.SOMETHING_WENT_WRONG))
+                googleCallbackInterface.onError(
+                    CustomException(
+                        AppErrorCode.SOMETHING_WENT_WRONG,
+                        AppErrorMessages.SOMETHING_WENT_WRONG
+                    )
+                )
             }
         } else {
             Utils.printDebugLog("Account picker cancelled or failed")
@@ -126,10 +143,20 @@ class GoogleCalendarEventsHelper(private val context: Context,
             if (result.data != null) {
                 makeRequest()
             } else {
-                googleCallbackInterface.onError(CustomException(AppErrorCode.SOMETHING_WENT_WRONG, AppErrorMessages.SOMETHING_WENT_WRONG))
+                googleCallbackInterface.onError(
+                    CustomException(
+                        AppErrorCode.SOMETHING_WENT_WRONG,
+                        AppErrorMessages.SOMETHING_WENT_WRONG
+                    )
+                )
             }
         } else {
-            googleCallbackInterface.onError(CustomException(AppErrorCode.APP_AUTHORIZATION_NEEDED, AppErrorMessages.APP_AUTHORIZATION_NEEDED))
+            googleCallbackInterface.onError(
+                CustomException(
+                    AppErrorCode.APP_AUTHORIZATION_NEEDED,
+                    AppErrorMessages.APP_AUTHORIZATION_NEEDED
+                )
+            )
         }
     }
 
@@ -163,14 +190,17 @@ class GoogleCalendarEventsHelper(private val context: Context,
                     when (mLastError) {
                         is GooglePlayServicesAvailabilityIOException -> {
                             Utils.printDebugLog("e2")
-                            googleCallbackInterface.onError(CustomException(
-                                AppErrorCode.GOOGLE_PLAY_SERVICES_NOT_PRESENT,
-                                AppErrorMessages.GOOGLE_PLAY_SERVICES_NOT_PRESENT))
+                            googleCallbackInterface.onError(
+                                CustomException(
+                                    AppErrorCode.GOOGLE_PLAY_SERVICES_NOT_PRESENT,
+                                    AppErrorMessages.GOOGLE_PLAY_SERVICES_NOT_PRESENT
+                                )
+                            )
                         }
 
                         is UserRecoverableAuthIOException -> {
                             Utils.printDebugLog("e3")
-                            authorizationLauncher.launch((mLastError as UserRecoverableAuthIOException).intent)
+                            authorizationLauncher?.launch((mLastError as UserRecoverableAuthIOException).intent)
                         }
 
                         else -> {
@@ -212,9 +242,9 @@ class GoogleCalendarEventsHelper(private val context: Context,
             }
             return eventStrings
 
-        }  catch (exception: UserRecoverableAuthIOException) {
+        } catch (exception: UserRecoverableAuthIOException) {
             Utils.printDebugLog("e3.5")
-            authorizationLauncher.launch(exception.intent)
+            authorizationLauncher?.launch(exception.intent)
         } catch (e: IOException) {
             Utils.printDebugLog("e4")
             Utils.printDebugLog("Google ${e.message}")
@@ -223,6 +253,66 @@ class GoogleCalendarEventsHelper(private val context: Context,
             Utils.printDebugLog("e5")
         }
         return eventStrings
+    }
+
+
+    suspend fun getEventById(emailId: String, eventId: String): Event? {
+        return try {
+            val googleCalendarEvent = withContext(Dispatchers.IO) {
+                mCredential!!.selectedAccountName = emailId
+                mService!!.events().get("primary", eventId).execute()
+            }
+            Utils.printDebugLog("eventsById: $googleCalendarEvent")
+            googleCalendarEvent
+        } catch (exception: Exception) {
+            Utils.printErrorLog("exception___: $exception")
+            null
+        }
+    }
+
+    suspend fun updateCalendarEvent(
+        emailId: String,
+        eventId: String,
+        eventSummary: String,
+        startDateTime: EventDateTime,
+        endDateTime: EventDateTime,
+        descriptionText: String,
+        locationText: String,
+        eventVisibility: String
+    ): Event? {
+        return try {
+            val updateEvent = Event().apply {
+                summary = eventSummary
+    //            start = EventDateTime().apply {
+    //                dateTime = DateTime("2024-04-10T16:00:00+05:30") // Example start time
+    //            }
+    //            end = EventDateTime().apply {
+    //                dateTime = DateTime("2024-04-10T19:00:00+05:30") // Example end time
+    //            }
+                start = startDateTime
+                end = endDateTime
+                location = locationText
+                recurrence = arrayListOf("dkjhgc")
+                description = descriptionText
+                attendees = listOf(
+                    EventAttendee().apply {
+                        email = "attendee1@example.com"
+                    },
+                    EventAttendee().apply {
+                        email = "attendee2@example.com"
+                    }
+                )
+                colorId = "1" // Example color ID
+                visibility = eventVisibility
+
+            }
+            val updatedEvent = lifecycleOwner.lifecycleScope.async {
+                mService!!.events().update("primary", eventId, updateEvent).execute()
+            }.await()
+             updatedEvent
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun <R> CoroutineScope.executeAsyncTask(
@@ -241,23 +331,32 @@ class GoogleCalendarEventsHelper(private val context: Context,
 
     private fun performValidationChecks(): Boolean {
         if (!isGooglePlayServicesAvailable()) {
-            googleCallbackInterface.onError(CustomException(
-                AppErrorCode.GOOGLE_PLAY_SERVICES_NOT_PRESENT,
-                AppErrorMessages.GOOGLE_PLAY_SERVICES_NOT_PRESENT))
+            googleCallbackInterface.onError(
+                CustomException(
+                    AppErrorCode.GOOGLE_PLAY_SERVICES_NOT_PRESENT,
+                    AppErrorMessages.GOOGLE_PLAY_SERVICES_NOT_PRESENT
+                )
+            )
             return false
         }
 
         if (!checkPermission()) {
-            googleCallbackInterface.onError(CustomException(
-                AppErrorCode.GET_ACCOUNTS_PERMISSION_NOT_GRANTED,
-                AppErrorMessages.GET_ACCOUNTS_PERMISSION_NOT_GRANTED))
+            googleCallbackInterface.onError(
+                CustomException(
+                    AppErrorCode.GET_ACCOUNTS_PERMISSION_NOT_GRANTED,
+                    AppErrorMessages.GET_ACCOUNTS_PERMISSION_NOT_GRANTED
+                )
+            )
             return false
         }
 
         if (!isDeviceOnline()) {
-            googleCallbackInterface.onError(CustomException(
-                AppErrorCode.NO_INTERNET_CONNECTION,
-                AppErrorMessages.NO_INTERNET_CONNECTION))
+            googleCallbackInterface.onError(
+                CustomException(
+                    AppErrorCode.NO_INTERNET_CONNECTION,
+                    AppErrorMessages.NO_INTERNET_CONNECTION
+                )
+            )
             return false
         }
 

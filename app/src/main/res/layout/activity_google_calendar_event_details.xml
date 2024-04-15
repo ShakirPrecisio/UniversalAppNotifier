@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.googleCalEventsDetail.GoogleCalendarEventDetailsActivity"
+    android:padding="16dp"
+    android:orientation="vertical">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_event_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        style="@style/TextInputLayoutStyle">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_text_input_event_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/add_title"
+            style="@style/TextInputEditTextStyle"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:weightSum="5"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/tv_event_start_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="3dp"
+            android:layout_weight="1"
+            tools:text="Apr 10, 2024"
+            style="@style/SmallRegularText"/>
+        <TextView
+            android:id="@+id/tv_event_start_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="3dp"
+            android:layout_weight="0.8"
+            tools:text="5:00pm"
+            style="@style/SmallRegularText"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="6dp"
+            android:layout_weight="0.4"
+            android:text="@string/to"
+            style="@style/SmallRegularText"/>
+        <TextView
+            android:id="@+id/tv_event_end_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="6dp"
+            android:layout_weight="0.8"
+            tools:text="6:00pm"
+            style="@style/SmallRegularText"/>
+        <TextView
+            android:id="@+id/tv_event_end_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="6dp"
+            android:layout_weight="1"
+            tools:text="Apr 10, 2024"
+            style="@style/SmallRegularText"/>
+        <TextView
+            android:id="@+id/tv_time_zone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="6dp"
+            android:background="@drawable/square_slight_rounded_corners"
+            android:backgroundTint="@color/white"
+            android:paddingVertical="6dp"
+            android:layout_weight="1"
+            android:text="@string/time_zone"
+            style="@style/SmallRegularText"/>
+    </LinearLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        style="@style/TextInputLayoutStyle">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edt_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/location"
+            style="@style/TextInputEditTextStyle"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

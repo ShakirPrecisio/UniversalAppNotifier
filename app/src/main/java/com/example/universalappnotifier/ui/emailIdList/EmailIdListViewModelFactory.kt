@@ -8,5 +8,4 @@ class EmailIdListViewModelFactory(private val appRepository: AppRepository) : Vi
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return EmailIdListViewModel(appRepository) as T
     }
-
 }

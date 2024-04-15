@@ -24,4 +24,8 @@
     <string name="privacy_policy">Privacy Policy</string>
     <string name="terms_n_conditions"><![CDATA[Terms & Conditions]]></string>
     <string name="sign_out">Sign Out</string>
+    <string name="add_title">Add title</string>
+    <string name="to">to</string>
+    <string name="time_zone">Time Zone</string>
+    <string name="location">Location</string>
 </resources>

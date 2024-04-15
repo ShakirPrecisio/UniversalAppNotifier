@@ -17,6 +17,7 @@ import com.example.universalappnotifier.enums.EventTime
 import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.utils.Utils
 import com.example.universalappnotifier.utils.Utils.createFadedVersionOfColor
+import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -24,7 +25,8 @@ import java.util.Locale
 class GenericEventsAdapter(
     private val dataList: ArrayList<GenericEventModel>,
     private val context: Context,
-    private val currentTimeMillis: Long
+    private val currentTimeMillis: Long,
+    private val onEventClickListener: OnEventClickListener
 ) :
     RecyclerView.Adapter<GenericEventsAdapter.ViewHolder>() {
 
@@ -60,6 +62,7 @@ class GenericEventsAdapter(
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val mcvParentLayout: MaterialCardView = itemView.findViewById(R.id.mcv_parent_layout)
         private val viewSideBar: View = itemView.findViewById(R.id.view_side_bar)
         private val tvCountDownEventTime: TextView = itemView.findViewById(R.id.tv_countdown_event_time)
         private val tvTitle: TextView = itemView.findViewById(R.id.tv_title)
@@ -122,6 +125,10 @@ class GenericEventsAdapter(
             } else if (data.event_time == EventTime.FUTURE) {
                 tvCountDownEventTime.text = "In future"
             }
+
+            mcvParentLayout.setOnClickListener {
+                onEventClickListener.onEventClicked(data)
+            }
         }
         private fun createRoundedDrawable(color: Int): Drawable {
             val fadedColorVersion = createFadedVersionOfColor(color, 0.2f)
@@ -142,6 +149,8 @@ class GenericEventsAdapter(
         }
     }
 
-
+    interface OnEventClickListener {
+        fun onEventClicked(genericEventModel: GenericEventModel)
+    }
 
 }

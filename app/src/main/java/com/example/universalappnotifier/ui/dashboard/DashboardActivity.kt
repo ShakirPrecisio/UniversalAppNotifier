@@ -35,6 +35,7 @@ import com.example.universalappnotifier.models.GenericEventModel
 import com.example.universalappnotifier.models.UserData
 import com.example.universalappnotifier.outlook.OutlookCalendarEventsFetcher
 import com.example.universalappnotifier.ui.emailIdList.EmailIdListActivity
+import com.example.universalappnotifier.ui.googleCalEventsDetail.GoogleCalendarEventDetailsActivity
 import com.example.universalappnotifier.ui.signin.SignInActivity
 import com.example.universalappnotifier.utils.DateUtil
 import com.example.universalappnotifier.utils.DatePickerUtil
@@ -57,7 +58,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 
-class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, DateListAdapter.OnDateSelectedListener {
+class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener, DateListAdapter.OnDateSelectedListener ,
+    GenericEventsAdapter.OnEventClickListener {
 
     private lateinit var googleCalendarEvents: ArrayList<GenericEventModel>
     private lateinit var outlookCalendarEvents: ArrayList<GenericEventModel>
@@ -66,7 +68,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     private lateinit var userDataResult: FirebaseResponse<UserData?>
     private lateinit var binding: ActivityDashboardBinding
 
-    lateinit var toggle: ActionBarDrawerToggle
+    lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
 
     private lateinit var dashboardViewModel: DashboardViewModel
 
@@ -89,7 +91,6 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
     private var selectedEventSource = EventSource.ALL
 
-    // Initialize the ActivityResultLauncher
     private val isNewEmailIdAddedResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
     { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -97,11 +98,19 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             val isEmailIdListUpdated = data?.getBooleanExtra("is_email_list_updated", false)
             Utils.printDebugLog("Dashboard: isNewEmailIdAdded: $isEmailIdListUpdated")
             if (isEmailIdListUpdated!!) {
-                if (Utils.isInternetAvailable(this@DashboardActivity)) {
-                    fetchUserData()
-                } else {
-                    Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-                }
+                fetchUserData()
+            }
+        }
+    }
+
+    private val isGoogleCalEventUpdatedResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data: Intent? = result.data
+            val isGoogleCalEventUpdated = data?.getBooleanExtra("is_google_cal_event_updated", false)
+            Utils.printDebugLog("Dashboard isGoogleCalEventUpdated: $isGoogleCalEventUpdated")
+            if (isGoogleCalEventUpdated!!) {
+                fetchUserData()
             }
         }
     }
@@ -111,12 +120,11 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        toggle = ActionBarDrawerToggle(this@DashboardActivity, binding.drawerLayout,binding.toolBar, R.string.open, R.string.close)
-        binding.drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-
+        //for setting navigation for side drawer layout
+        actionBarDrawerToggle = ActionBarDrawerToggle(this@DashboardActivity, binding.drawerLayout,binding.toolBar, R.string.open, R.string.close)
+        binding.drawerLayout.addDrawerListener(actionBarDrawerToggle)
+        actionBarDrawerToggle.syncState()
         setSupportActionBar(binding.toolBar)
-
         binding.navView.setNavigationItemSelectedListener(this)
 
         val repository = (application as MyApplication).appRepository
@@ -130,11 +138,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         binding.tvSelectedMonthName.text = DateUtil.getSelectedMonthName(selectedLocalDate)
         binding.tvSelectedYear.text = DateUtil.getSelectedYear(selectedLocalDate).toString()
         attachClickListeners()
-        if (Utils.isInternetAvailable(this@DashboardActivity)) {
-            fetchUserData()
-        } else {
-            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-        }
+        fetchUserData()
         attachObservers()
     }
 
@@ -161,11 +165,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             ProgressDialog.show(this@DashboardActivity, "Getting events for $currentLocalDate")
             showHideSeeTodayEventsFAB()
             setDateFilterList()
-            if (Utils.isInternetAvailable(this@DashboardActivity)) {
-                getCalendarEvents1()
-            } else {
-                Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-            }
+            getCalendarEvents1()
         }
 
         val HIDE_FAB_DELAY_MS = 100L
@@ -237,11 +237,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
             }
         }
 //        ProgressDialog.show(this@DashboardActivity, "Getting events for ${selectedLocalDate}")
-        if (Utils.isInternetAvailable(this@DashboardActivity)) {
-            getCalendarEvents1()
-        } else {
-            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-        }
+        getCalendarEvents1()
     }
 
     private fun setDateFilterList() {
@@ -266,11 +262,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                     setSelectedDateData(selectedDate)
                     showHideSeeTodayEventsFAB()
                     setDateFilterList()
-                    if (Utils.isInternetAvailable(this@DashboardActivity)) {
-                        getCalendarEvents1()
-                    } else {
-                        Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-                    }
+                    getCalendarEvents1()
                 }
             })
     }
@@ -292,7 +284,8 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 genericEventsAdapter = GenericEventsAdapter(
                     outlookCalendarEvents,
                     this@DashboardActivity,
-                    System.currentTimeMillis()
+                    System.currentTimeMillis(),
+                    this
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
             }
@@ -303,7 +296,8 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 genericEventsAdapter = GenericEventsAdapter(
                     googleCalendarEventsList,
                     this@DashboardActivity,
-                    System.currentTimeMillis()
+                    System.currentTimeMillis(),
+                    this
                 )
                 binding.rvGenericEventsList.adapter = genericEventsAdapter
             }
@@ -311,51 +305,83 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     }
 
     private fun fetchUserData() {
-        ProgressDialog.show(this@DashboardActivity,"Please wait")
-        lifecycleScope.launch {
-            userDataResult = dashboardViewModel.getUserData()
-            when (userDataResult) {
-                is FirebaseResponse.Success -> {
-                    val userData = (userDataResult as FirebaseResponse.Success<UserData?>).data
-                    if (userData != null) {
-                        Utils.printDebugLog("Fetching_User_Data :: Success")
-                        binding.drawerLayout.findViewById<TextView>(R.id.tv_user_name).text =  userData.user_name
-                        binding.drawerLayout.findViewById<TextView>(R.id.tv_user_email_id).text =  userData.user_email
-                        if (userData.calendar_events != null) {
-                            Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
-                            userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
-                            if (userData.calendar_events!!.outlook_calendar.isNotEmpty()) {
-                                outlookCalendarEmailList = userData.calendar_events!!.outlook_calendar as ArrayList<CalendarEmailData>
-                            }
-                            if (userGoogleCalendarEventsEmailIds.isNotEmpty()) {
-                                if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
-                                    if (Utils.isDeviceOnline(this@DashboardActivity)) {
-                                        if (isGooglePlayServicesAvailable()) {
-                                            applyEventSourceFilter(EventSource.GOOGLE)
+        if (Utils.isInternetAvailable(this@DashboardActivity)) {
+            ProgressDialog.show(this@DashboardActivity,"Please wait")
+            lifecycleScope.launch {
+                userDataResult = dashboardViewModel.getUserData()
+                when (userDataResult) {
+                    is FirebaseResponse.Success -> {
+                        val userData = (userDataResult as FirebaseResponse.Success<UserData?>).data
+                        if (userData != null) {
+                            Utils.printDebugLog("Fetching_User_Data :: Success")
+                            binding.drawerLayout.findViewById<TextView>(R.id.tv_user_name).text =  userData.user_name
+                            binding.drawerLayout.findViewById<TextView>(R.id.tv_user_email_id).text =  userData.user_email
+                            if (userData.calendar_events != null) {
+                                Utils.printDebugLog("Got_email_ids_for_calendar_events :: ${userData.calendar_events!!.google_calendar}")
+                                userGoogleCalendarEventsEmailIds = userData.calendar_events!!.google_calendar
+                                if (userData.calendar_events!!.outlook_calendar.isNotEmpty()) {
+                                    outlookCalendarEmailList = userData.calendar_events!!.outlook_calendar as ArrayList<CalendarEmailData>
+                                }
+                                if (userGoogleCalendarEventsEmailIds.isNotEmpty()) {
+                                    if (Utils.isAccountPermissionNotGranted(this@DashboardActivity)) {
+                                        if (Utils.isDeviceOnline(this@DashboardActivity)) {
+                                            if (isGooglePlayServicesAvailable()) {
+                                                applyEventSourceFilter(EventSource.GOOGLE)
+                                            } else {
+                                                acquireGooglePlayServices()
+                                            }
                                         } else {
-                                            acquireGooglePlayServices()
+                                            Utils.showLongToast(this@DashboardActivity, "No internet")
                                         }
-                                    } else {
-                                        Utils.showLongToast(this@DashboardActivity, "No internet")
+                                    }
+                                } else {
+                                    ProgressDialog.dismiss()
+                                    Utils.singleOptionAlertDialog(
+                                        this@DashboardActivity,
+                                        "No Email Id added.",
+                                        "Please click on 'Add Email' to get calendar events",
+                                        "Okay",
+                                        false) {
+                                        isNewEmailIdAddedResultLauncher.launch(Intent(this@DashboardActivity, EmailIdListActivity::class.java))
                                     }
                                 }
                             } else {
-                                ProgressDialog.dismiss()
-                                Utils.singleOptionAlertDialog(
-                                    this@DashboardActivity,
-                                    "No Email Id added.",
-                                    "Please click on 'Add Email' to get calendar events",
-                                    "Okay",
-                                    false) {
-                                    isNewEmailIdAddedResultLauncher.launch(Intent(this@DashboardActivity, EmailIdListActivity::class.java))
-                                }
+                                Utils.printDebugLog("User_Calendar_Events_Not_Found")
+                                Utils.showLongToast(this@DashboardActivity, "Please add your email id to get events.")
                             }
                         } else {
-                            Utils.printDebugLog("User_Calendar_Events_Not_Found")
-                            Utils.showLongToast(this@DashboardActivity, "Please add your email id to get events.")
+                            Utils.printErrorLog("User_Data_Not_Found")
+                            Utils.singleOptionAlertDialog(
+                                this@DashboardActivity,
+                                "Something went wrong",
+                                "Please login again.",
+                                "OKAY",
+                                false
+                            ) {
+                                ProgressDialog.dismiss()
+                                Utils.showShortToast(this@DashboardActivity, "Signing you out")
+                                FirebaseAuth.getInstance().signOut()
+
+                                val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                    .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
+                                    .requestEmail()
+                                    .build()
+                                val mGoogleSignInClient = GoogleSignIn.getClient(this@DashboardActivity, gso)
+                                mGoogleSignInClient.signOut().addOnCompleteListener(this@DashboardActivity) {
+                                    Utils.printDebugLog("mGoogleSignInClient: Signing out user")
+                                    finish()
+                                    startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
+                                }
+                                val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
+                                startActivity(intent)
+                                finish()
+                            }
                         }
-                    } else {
-                        Utils.printErrorLog("User_Data_Not_Found")
+                    }
+
+                    is FirebaseResponse.Failure -> {
+                        ProgressDialog.dismiss()
+                        Utils.printErrorLog("Fetching_User_Data :: Failure: ${(userDataResult as FirebaseResponse.Failure).exception}")
                         Utils.singleOptionAlertDialog(
                             this@DashboardActivity,
                             "Something went wrong",
@@ -363,47 +389,19 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                             "OKAY",
                             false
                         ) {
-                            ProgressDialog.dismiss()
-                            Utils.showShortToast(this@DashboardActivity, "Signing you out")
-                            FirebaseAuth.getInstance().signOut()
-
-                            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                                .requestIdToken("1071450710202-vrdokmjcrsl8nt3tsv393c0la1hcne52.apps.googleusercontent.com")
-                                .requestEmail()
-                                .build()
-                            val mGoogleSignInClient = GoogleSignIn.getClient(this@DashboardActivity, gso)
-                            mGoogleSignInClient.signOut().addOnCompleteListener(this@DashboardActivity) {
-                                Utils.printDebugLog("mGoogleSignInClient: Signing out user")
-                                finish()
-                                startActivity(Intent(this@DashboardActivity, SignInActivity::class.java))
-                            }
                             val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
                             startActivity(intent)
                             finish()
                         }
                     }
-                }
 
-                is FirebaseResponse.Failure -> {
-                    ProgressDialog.dismiss()
-                    Utils.printErrorLog("Fetching_User_Data :: Failure: ${(userDataResult as FirebaseResponse.Failure).exception}")
-                    Utils.singleOptionAlertDialog(
-                        this@DashboardActivity,
-                        "Something went wrong",
-                        "Please login again.",
-                        "OKAY",
-                        false
-                    ) {
-                        val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
-                        startActivity(intent)
-                        finish()
+                    is FirebaseResponse.Loading -> {
+                        Utils.printErrorLog("Fetching_User_Data :: Loading")
                     }
                 }
-
-                is FirebaseResponse.Loading -> {
-                    Utils.printErrorLog("Fetching_User_Data :: Loading")
-                }
             }
+        } else {
+            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
         }
     }
 
@@ -426,81 +424,85 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
 
     private fun getCalendarEvents1() {
         cancelCountdownsIfStarted()
-        googleCalendarEventsFetcher =
-            GoogleCalendarEventsFetcher(
-                this@DashboardActivity,
-                requestAuthorizationLauncher
-            )
-
-        lifecycleScope.launch {
-            Utils.printDebugLog("googleCalendarEventsList_: $googleCalendarEventsList")
-            if (googleCalendarEventsList.size>0) {
-                genericEventsAdapter.clear()
-            }
-            googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, selectedLocalDate) as ArrayList<GenericEventModel>
-            Utils.printDebugLog("googleCalendarEventsList: $googleCalendarEventsList")
-            ProgressDialog.dismiss()
-            if (googleCalendarEventsList.isNotEmpty()) {
-                for (emailData in userGoogleCalendarEventsEmailIds) {
-                    googleCalendarEventsList.forEach {
-                        if (emailData.email_id == it.event_source_email_id) {
-                            it.color = emailData.color
-                        }
-                    }
-                }
-                val currentTimeInMillis = System.currentTimeMillis()
-                var upcomingEventPosition = 0
-                var isScrollToPositionIndexSet = false
-                googleCalendarEventsList = sortTimestamps(googleCalendarEventsList)
-                googleCalendarEventsList.forEachIndexed { index, genericEventModel ->
-                    if (genericEventModel.event_source == EventSource.GOOGLE) {
-                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
-                        val eventStartDate = sdf.parse(genericEventModel.start_time!!)
-                        val startTimeDiff = eventStartDate!!.time - currentTimeInMillis
-                        val eventEndDate = sdf.parse(genericEventModel.end_time!!)
-                        val endTimeDiff = eventEndDate!!.time - currentTimeInMillis
-                        genericEventModel.event_time = if (endTimeDiff < 0) {
-                            EventTime.ALREADY_PASSED
-                        } else if (startTimeDiff < 0 && endTimeDiff > 0) {
-                            if (!isScrollToPositionIndexSet) {
-                                upcomingEventPosition = index
-                                isScrollToPositionIndexSet = true
-                            }
-                            EventTime.CURRENTLY_GOING_ON
-                        } else if (startTimeDiff <= 2 * 60 * 60 * 1000) {
-                            if (!isScrollToPositionIndexSet) {
-                                upcomingEventPosition = index
-                                isScrollToPositionIndexSet = true
-                            }
-                            EventTime.UPCOMING
-                        } else {
-                            if (!isScrollToPositionIndexSet) {
-                                upcomingEventPosition = index
-                                isScrollToPositionIndexSet = true
-                            }
-                            EventTime.FUTURE
-                        }
-                    }
-                }
-                genericEventsAdapter = GenericEventsAdapter(
-                    googleCalendarEventsList,
+        if (Utils.isInternetAvailable(this@DashboardActivity)) {
+            googleCalendarEventsFetcher =
+                GoogleCalendarEventsFetcher(
                     this@DashboardActivity,
-                    currentTimeInMillis
+                    requestAuthorizationLauncher
                 )
-                binding.rvGenericEventsList.adapter = genericEventsAdapter
-                binding.rvGenericEventsList.scrollToPosition(upcomingEventPosition)
-            } else {
-                Utils.twoOptionAlertDialog(
-                    this@DashboardActivity,
-                    "No events",
-                    "There are no events for $selectedLocalDate",
-                    "Okay",
-                    "Select another date",
-                    false,{},
-                    {
-                        getDateFromUser()
-                    })
+            lifecycleScope.launch {
+                Utils.printDebugLog("googleCalendarEventsList_: $googleCalendarEventsList")
+                if (googleCalendarEventsList.size>0) {
+                    genericEventsAdapter.clear()
+                }
+                googleCalendarEventsList = googleCalendarEventsFetcher.fetchEvents(userGoogleCalendarEventsEmailIds, selectedLocalDate) as ArrayList<GenericEventModel>
+                Utils.printDebugLog("googleCalendarEventsList: $googleCalendarEventsList")
+                ProgressDialog.dismiss()
+                if (googleCalendarEventsList.isNotEmpty()) {
+                    for (emailData in userGoogleCalendarEventsEmailIds) {
+                        googleCalendarEventsList.forEach {
+                            if (emailData.email_id == it.event_source_email_id) {
+                                it.color = emailData.color
+                            }
+                        }
+                    }
+                    val currentTimeInMillis = System.currentTimeMillis()
+                    var upcomingEventPosition = 0
+                    var isScrollToPositionIndexSet = false
+                    googleCalendarEventsList = sortTimestamps(googleCalendarEventsList)
+                    googleCalendarEventsList.forEachIndexed { index, genericEventModel ->
+                        if (genericEventModel.event_source == EventSource.GOOGLE) {
+                            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
+                            val eventStartDate = sdf.parse(genericEventModel.start_time!!)
+                            val startTimeDiff = eventStartDate!!.time - currentTimeInMillis
+                            val eventEndDate = sdf.parse(genericEventModel.end_time!!)
+                            val endTimeDiff = eventEndDate!!.time - currentTimeInMillis
+                            genericEventModel.event_time = if (endTimeDiff < 0) {
+                                EventTime.ALREADY_PASSED
+                            } else if (startTimeDiff < 0 && endTimeDiff > 0) {
+                                if (!isScrollToPositionIndexSet) {
+                                    upcomingEventPosition = index
+                                    isScrollToPositionIndexSet = true
+                                }
+                                EventTime.CURRENTLY_GOING_ON
+                            } else if (startTimeDiff <= 2 * 60 * 60 * 1000) {
+                                if (!isScrollToPositionIndexSet) {
+                                    upcomingEventPosition = index
+                                    isScrollToPositionIndexSet = true
+                                }
+                                EventTime.UPCOMING
+                            } else {
+                                if (!isScrollToPositionIndexSet) {
+                                    upcomingEventPosition = index
+                                    isScrollToPositionIndexSet = true
+                                }
+                                EventTime.FUTURE
+                            }
+                        }
+                    }
+                    genericEventsAdapter = GenericEventsAdapter(
+                        googleCalendarEventsList,
+                        this@DashboardActivity,
+                        currentTimeInMillis,
+                        this@DashboardActivity
+                    )
+                    binding.rvGenericEventsList.adapter = genericEventsAdapter
+                    binding.rvGenericEventsList.scrollToPosition(upcomingEventPosition)
+                } else {
+                    Utils.twoOptionAlertDialog(
+                        this@DashboardActivity,
+                        "No events",
+                        "There are no events for $selectedLocalDate",
+                        "Okay",
+                        "Select another date",
+                        false,{},
+                        {
+                            getDateFromUser()
+                        })
+                }
             }
+        } else {
+            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
         }
     }
 
@@ -643,11 +645,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         setSelectedDateData(dateItemData.localDate)
         showHideSeeTodayEventsFAB()
         ProgressDialog.show(this@DashboardActivity, "Getting events for ${dateItemData.localDate}")
-        if (Utils.isInternetAvailable(this@DashboardActivity)) {
-            getCalendarEvents1()
-        } else {
-            Utils.showLongToast(this@DashboardActivity, "Please check your internet connection")
-        }
+        getCalendarEvents1()
     }
 
     private fun showHideSeeTodayEventsFAB() {
@@ -661,7 +659,7 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (toggle.onOptionsItemSelected(item)) {
+        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
             return true
         }
         return super.onOptionsItemSelected(item)
@@ -729,6 +727,13 @@ class DashboardActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         }
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
+    }
+
+    override fun onEventClicked(genericEventModel: GenericEventModel) {
+        isGoogleCalEventUpdatedResultLauncher.launch(Intent(this@DashboardActivity, GoogleCalendarEventDetailsActivity::class.java).apply {
+            putExtra("email_id", genericEventModel.event_source_email_id)
+            putExtra("event_id", genericEventModel.source_event_id)
+        })
     }
 
 
