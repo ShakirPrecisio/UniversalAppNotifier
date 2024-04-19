@@ -124,6 +124,22 @@ object Utils {
         return indianZonedDateTime.format(indianFormatter)
     }
 
+    fun returnDateAndTime(inputDate: String): Pair<String, String> {
+        //this method coverts the input date "2024-04-18T13:30:00.000+05:30" to two different strings. one for date in this format "18 Apr 2024" and one for time in this format "1:30pm"
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.ENGLISH)
+        val inputDateTime = LocalDateTime.parse(inputDate, dateTimeFormatter)
+
+        // Format date
+        val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+        val formattedDate = inputDateTime.format(dateFormatter)
+
+        // Format time
+        val timeFormatter = DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)
+        val formattedTime = inputDateTime.format(timeFormatter)
+
+        return Pair(formattedDate, formattedTime.toLowerCase())
+    }
+
 
     fun showShortToast(context: Context, message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

@@ -255,7 +255,6 @@ class GoogleCalendarEventsHelper(
         return eventStrings
     }
 
-
     suspend fun getEventById(emailId: String, eventId: String): Event? {
         return try {
             val googleCalendarEvent = withContext(Dispatchers.IO) {
@@ -263,6 +262,7 @@ class GoogleCalendarEventsHelper(
                 mService!!.events().get("primary", eventId).execute()
             }
             Utils.printDebugLog("eventsById: $googleCalendarEvent")
+            Utils.printDebugLog("eventsById_: ${googleCalendarEvent.transparency}")
             googleCalendarEvent
         } catch (exception: Exception) {
             Utils.printErrorLog("exception___: $exception")
@@ -271,29 +271,31 @@ class GoogleCalendarEventsHelper(
     }
 
     suspend fun updateCalendarEvent(
-        emailId: String,
-        eventId: String,
-        eventSummary: String,
-        startDateTime: EventDateTime,
-        endDateTime: EventDateTime,
-        descriptionText: String,
-        locationText: String,
-        eventVisibility: String
+        event: Event
     ): Event? {
         return try {
+//            val list = mService!!.colors().get().execute()
             val updateEvent = Event().apply {
-                summary = eventSummary
+                summary = event.summary
     //            start = EventDateTime().apply {
     //                dateTime = DateTime("2024-04-10T16:00:00+05:30") // Example start time
     //            }
     //            end = EventDateTime().apply {
     //                dateTime = DateTime("2024-04-10T19:00:00+05:30") // Example end time
     //            }
-                start = startDateTime
-                end = endDateTime
-                location = locationText
+//                start = event.start.dateTime
+//                start.dateTime = event.start.dateTime
+//                start.date = event.start.date
+//                start.timeZone = event.start.timeZone
+//
+////                end = endDateTime
+//                end.dateTime = event.end.dateTime
+//                end.date = event.end.date
+//                end.timeZone = event.end.timeZone
+
+                location = event.location
                 recurrence = arrayListOf("dkjhgc")
-                description = descriptionText
+                description = event.description
                 attendees = listOf(
                     EventAttendee().apply {
                         email = "attendee1@example.com"
@@ -302,15 +304,16 @@ class GoogleCalendarEventsHelper(
                         email = "attendee2@example.com"
                     }
                 )
-                colorId = "1" // Example color ID
-                visibility = eventVisibility
-
+                colorId = "1"
+                visibility = event.visibility
             }
-            val updatedEvent = lifecycleOwner.lifecycleScope.async {
-                mService!!.events().update("primary", eventId, updateEvent).execute()
+            val updatedEvent = lifecycleOwner.lifecycleScope.async(Dispatchers.IO) {
+                mService!!.events().update("primary", event.id, updateEvent).execute()
             }.await()
-             updatedEvent
+             Utils.printDebugLog("uppp: $updatedEvent")
+            updatedEvent
         } catch (e: Exception) {
+            Utils.printDebugLog("uppp_exce: $e")
             null
         }
     }

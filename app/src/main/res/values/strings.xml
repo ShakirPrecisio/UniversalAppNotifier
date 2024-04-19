@@ -28,4 +28,7 @@
     <string name="to">to</string>
     <string name="time_zone">Time Zone</string>
     <string name="location">Location</string>
+    <string name="type_description_here">Type description here</string>
+    <string name="save">Save</string>
+    <string name="summary">Summary</string>
 </resources>
